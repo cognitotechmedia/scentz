@@ -9,8 +9,9 @@ const { dispatch, HttpError, userForToken } = require('./api');
 const { todayKey } = require('../public/shared.js');
 
 const PORT = Number(process.env.PORT) || 3000;
-// Local only by default. Set HOST=0.0.0.0 (behind HTTPS) to let other devices connect.
-const HOST = process.env.HOST || '127.0.0.1';
+// Listen on all interfaces by default so managed hosting reverse proxies can reach the app.
+// Set HOST explicitly if a deployment environment requires a different bind address.
+const HOST = process.env.HOST || '0.0.0.0';
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const MAX_BODY = 1024 * 1024;
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
