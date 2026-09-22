@@ -385,6 +385,7 @@ function switchView(view) {
   $(`#${VIEWS[view]}`).classList.remove('hidden');
   $$('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.view === view));
   $('#page-title').textContent = VIEW_TITLES[view] || view[0].toUpperCase() + view.slice(1);
+  $('.summary-strip').classList.toggle('hidden', view !== 'billing');
   if (view === 'reports') renderReports();
   if (view === 'prices') renderPrices();
   if (view === 'vouchers') renderVouchers();
