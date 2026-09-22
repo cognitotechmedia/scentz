@@ -17,6 +17,8 @@ function check(name, condition, detail = '') {
 function client() {
   let cookie = '';
   const call = async (method, url, body, outlet) => {
+    if (url === '/api/sales') body = { requestId: require('node:crypto').randomUUID(), ...body };
+    if (url.includes('/reopen') || method === 'DELETE') body = { reason: 'Automated regression correction', ...body };
     const response = await fetch(base + url, { method, headers: { 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}), ...(outlet ? { 'X-Outlet-Id': String(outlet) } : {}) }, body: method === 'GET' ? undefined : JSON.stringify(body || {}) });
     const set = response.headers.get('set-cookie');
     if (set) cookie = set.split(';')[0];
@@ -372,8 +374,9 @@ async function run() {
   check('biller cannot download backups', (await fetch(base + '/api/backup', { headers: { Cookie: biller.cookie() } })).status === 403);
   check('a manager keeps the rights they had', (await manager('POST', '/api/expenses', { category: 'Rent', amount: 10, mode: 'Cash' })).status === 200);
   check('biller can change their own password', (await biller('POST', '/api/change-password', { current: 'biller-pass-1', next: 'biller-pass-2' })).status === 200);
-  check('the role can be changed by admin', (await admin('PUT', '/api/users/' + billerUser.json.id, { name: 'Counter One', role: 'manager', outletId: del })).json.role === 'manager' && (await biller('POST', '/api/expenses', { category: 'Rent', amount: 1, mode: 'Cash' })).status === 200);
+  check('role changes revoke the old session', (await admin('PUT', '/api/users/' + billerUser.json.id, { name: 'Counter One', role: 'manager', outletId: del })).json.role === 'manager' && (await biller('POST', '/api/expenses', { category: 'Rent', amount: 1, mode: 'Cash' })).status === 401);
   await admin('PUT', '/api/users/' + billerUser.json.id, { name: 'Counter One', role: 'biller', outletId: del });
+  await biller('POST', '/api/login', { username: 'counter1', password: 'biller-pass-2' });
   check('and back to biller', (await biller('POST', '/api/expenses', { category: 'Rent', amount: 1, mode: 'Cash' })).status === 403);
 
   console.log('Price slabs and customer types');
@@ -400,7 +403,8 @@ async function run() {
   check('a wholesaler can be added without a GSTIN', (await admin('POST', '/api/customers', { name: 'Star Traders', phone: '9111100002', type: 'wholesale' }, hq)).json.type === 'wholesale');
   check('a franchise needs a GSTIN', (await admin('POST', '/api/customers', { name: 'Franchise One', phone: '9111100003', type: 'franchise' }, hq)).status === 400);
   check('a badly formed GSTIN is refused', (await admin('POST', '/api/customers', { name: 'Franchise One', phone: '9111100003', type: 'franchise', gstin: '123' }, hq)).status === 400);
-  check('a franchise is added with its GSTIN and address', (await admin('POST', '/api/customers', { name: 'Franchise One', phone: '9111100003', type: 'franchise', gstin: '27ABCDE1234F1Z5', address: 'Linking Road, Mumbai' }, hq)).json.gstin === '27ABCDE1234F1Z5');
+  const mumbai = (await admin('POST', '/api/outlets', { code: 'MUM', name: 'Mumbai franchise', royaltyPct: 5, gstin: '27ABCDE1234F1Z5' })).json.id;
+  check('a franchise is added with its explicit outlet, GSTIN and address', (await admin('POST', '/api/customers', { name: 'Franchise One', phone: '9111100003', type: 'franchise', buyerOutletId: mumbai, gstin: '27ABCDE1234F1Z5', address: 'Linking Road, Mumbai' }, hq)).json.gstin === '27ABCDE1234F1Z5');
   check('adding an existing number with a type points to Edit', (await admin('POST', '/api/customers', { name: 'Star Traders', phone: '9111100002', type: 'wholesale' }, hq)).status === 409);
   check('an unknown type is refused', (await admin('POST', '/api/customers', { name: 'X Y', phone: '9111100004', type: 'vip' }, hq)).status === 400);
   const slabCusts = (await hqState()).customers;
@@ -471,7 +475,7 @@ async function run() {
   check('a counted packed product has its own stock item', Boolean(packed2.stockMaterialId));
   await admin('POST', '/api/purchases', { supplier: 'Bulk Pack', date: '2026-09-11', mode: 'Cash', paid: 8000, lines: [{ materialId: packed2.stockMaterialId, qty: 20, total: 8000 }] });
   await admin('PUT', '/api/prices', { prices: [{ id: packed2.id, price: 1000, wholesalePrice: 900, franchisePrice: 800 }] });
-  check('HQ adds the franchisee as a customer with the outlet GSTIN', (await admin('POST', '/api/customers', { name: 'Delhi Franchise', phone: '9333300001', type: 'franchise', gstin: invOutlet.gstin }, hq)).status === 200);
+  check('HQ adds the franchisee with an explicit receiving outlet', (await admin('POST', '/api/customers', { name: 'Delhi Franchise', phone: '9333300001', type: 'franchise', buyerOutletId: invOutlet.id, gstin: invOutlet.gstin }, hq)).status === 200);
   const hqInvoice = await admin('POST', '/api/sales', { customerName: 'Delhi Franchise', customerPhone: '9333300001', lines: [{ productId: packed2.id, qty: 3 }, { productId: vItem.id, qty: 1 }], discount: { type: 'amount', value: 0 }, payment: { mode: 'Cash', amount: 0 } }, hq);
   check('HQ raises the invoice at franchise prices', hqInvoice.status === 200 && /-FRN-/.test(hqInvoice.json.number) && hqInvoice.json.lines[0].price === 800, JSON.stringify(hqInvoice.json).slice(0, 200));
   check('a biller cannot see invoices to load', (await biller('GET', '/api/hq-invoices')).status === 403);
@@ -576,6 +580,7 @@ async function run() {
   const credit = await lBill('9555500002', [{ mode: 'Cash', amount: 100 }]);
   check('a bill not paid in full earns nothing', credit.json.pointsEarned === 0);
   const franCust = await manager('POST', '/api/customers', { name: 'Loyal Buyer', phone: '9555500003', type: 'franchise', gstin: '27ABCDE1234F1Z5' });
+  await admin('PUT', '/api/customers/9555500003', { name: 'Loyal Buyer', type: 'franchise', gstin: '27ABCDE1234F1Z5', buyerOutletId: mumbai }, del);
   const franBill = await lBill('9555500003', [{ mode: 'Cash', amount: vItem.price }]);
   check('a customer type outside the program earns nothing', franCust.status === 200 && franBill.json.pointsEarned === 0, JSON.stringify([franCust.status, franCust.json, franBill.status, franBill.json.error, franBill.json.pointsEarned]));
 

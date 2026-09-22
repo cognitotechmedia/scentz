@@ -72,7 +72,7 @@ On the billing screen, cash received can be more than the bill: the balance to r
 
 **Receipts & payments** records money received from credit customers and paid to suppliers. Each is a numbered voucher (`RCT` / `PAY`) applied to one or more unpaid bills, with a printable document; billers can take receipts but not make payments. The Receive and Pay buttons elsewhere create the same vouchers.
 
-**Franchise invoices as purchases:** HQ bills a franchise customer whose GSTIN is the franchisee outlet's GSTIN. On the franchisee's **Purchases** screen the invoice appears under "Invoices raised on your outlet"; **Load into purchase** books it in one step. Stock-counted items are added to the outlet's stock at the cost before GST, the GST is kept as part of the amount owed to HQ, and the invoice can only be loaded once. Pay HQ afterwards from Receipts & payments.
+**Franchise invoices as purchases:** HQ links the franchise customer to a specific receiving outlet in the Customer book. The GSTIN must match that outlet. On the franchisee's **Purchases** screen the invoice appears under "Invoices raised on your outlet"; **Load into purchase** books it in one step. Stock-counted items are added to the outlet's stock at the cost before GST, the GST is kept as part of the amount owed to HQ, and the invoice can only be loaded once. Pay HQ afterwards from Receipts & payments.
 
 ## Roles
 
@@ -91,3 +91,8 @@ Starts the server on a temporary database and checks the API end to end, includi
 ## Searching products
 
 The **Products** screen has a search box: type any part of a name, item code, barcode or type (several words must all match). The buttons beside it narrow the list to **Stock items**, **Billing catalog**, or **Low & out of stock**. Headings show how many of the total match, and **Esc** clears the search. Billers can search too.
+
+
+## Version 2.1 controls
+
+Bill requests are recoverable and cannot be replayed into duplicate sales. Royalty rates are saved per invoice. Linked franchise payments and returns update both outlets in one transaction. Store settings includes audit history, historical closing snapshots, and franchise reconciliation. Password and role changes revoke old sessions. Existing data upgrades automatically with a pre-upgrade recovery backup; older royalty rates are marked as baselines because past rate changes were not recorded. Run `npm test` for the API and controls regression suites.

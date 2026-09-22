@@ -36,7 +36,7 @@ const nameTaken = (name, exceptId) => [...db.prepare('SELECT id, name FROM mater
 const mapOutlet = row => ({ id: row.id, code: row.code, name: row.name, type: row.type, gstin: row.gstin, address: row.address, phone: row.phone, royaltyPct: row.royalty_pct, active: Boolean(row.active) });
 const mapProduct = row => ({ id: row.id, fillMaterialId: row.fill_material_id, code: row.code, name: row.name, type: row.type, price: row.price, wholesalePrice: row.wholesale_price ?? row.price, franchisePrice: row.franchise_price ?? row.price, gstRate: row.gst_rate, cost: row.cost, category: row.category, art: row.art, format: row.format, needsRecipe: Boolean(row.needs_recipe), recipeMl: row.recipe_ml, stockMaterialId: row.stock_material_id, packMaterialId: row.pack_material_id, packQty: row.pack_qty, ...(row.needs_recipe ? {} : { signature: true }) });
 const mapPayments = list => list.map(payment => ({ date: payment.date, mode: payment.mode, amount: payment.amount }));
-const mapSale = (row, payments) => ({ id: row.id, outletId: row.outlet_id, number: row.number, date: row.date, day: row.day, customerName: row.customer_name, customerPhone: row.customer_phone, customerGstin: row.customer_gstin, customerAddress: row.customer_address, priceType: row.price_type, pointsEarned: row.points_earned || 0, pointsRedeemed: row.points_redeemed || 0, pointsValue: row.points_value || 0, pointsBalance: row.points_balance || 0, salesmanId: row.salesman_id, salesmanName: row.salesman_name || '', taxMode: row.tax_mode, lines: JSON.parse(row.lines), subtotal: row.subtotal, discount: row.discount, taxable: row.taxable, cgst: row.cgst, sgst: row.sgst, roundOff: row.round_off, total: row.total, payments: mapPayments(payments || []) });
+const mapSale = (row, payments) => ({ id: row.id, outletId: row.outlet_id, number: row.number, date: row.date, day: row.day, customerName: row.customer_name, customerPhone: row.customer_phone, buyerOutletId: row.buyer_outlet_id, royaltyPct: row.royalty_pct, royaltyLegacy: Boolean(row.royalty_legacy), customerGstin: row.customer_gstin, customerAddress: row.customer_address, priceType: row.price_type, pointsEarned: row.points_earned || 0, pointsRedeemed: row.points_redeemed || 0, pointsValue: row.points_value || 0, pointsBalance: row.points_balance || 0, salesmanId: row.salesman_id, salesmanName: row.salesman_name || '', taxMode: row.tax_mode, lines: JSON.parse(row.lines), subtotal: row.subtotal, discount: row.discount, taxable: row.taxable, cgst: row.cgst, sgst: row.sgst, roundOff: row.round_off, total: row.total, payments: mapPayments(payments || []) });
 const mapPurchase = (row, payments) => ({ id: row.id, outletId: row.outlet_id, number: row.number, supplier: row.supplier, invoiceNo: row.invoice_no, date: row.date, total: row.total, extraAmount: row.extra_amount, sourceSaleId: row.source_sale_id, lines: JSON.parse(row.lines), payments: mapPayments(payments || []) });
 const mapExpense = row => ({ id: row.id, outletId: row.outlet_id, date: row.date, category: row.category, description: row.description, amount: row.amount, mode: row.mode });
 const mapTransfer = row => ({ id: row.id, number: row.number, fromOutlet: row.from_outlet, toOutlet: row.to_outlet, date: row.date, status: row.status, lines: JSON.parse(row.lines), value: row.value, note: row.note, receivedAt: row.received_at });
@@ -47,7 +47,7 @@ function groupPayments(kind, whereSql, params, table) {
   rows.forEach(row => { if (!grouped.has(row.ref_id)) grouped.set(row.ref_id, []); grouped.get(row.ref_id).push(row); });
   return grouped;
 }
-const mapCreditNote = row => ({ id: row.id, outletId: row.outlet_id, number: row.number, date: row.date, day: row.day, saleId: row.sale_id, saleNumber: row.sale_number, customerName: row.customer_name, customerPhone: row.customer_phone, reason: row.reason, lines: JSON.parse(row.lines), taxable: row.taxable, cgst: row.cgst, sgst: row.sgst, roundOff: row.round_off, total: row.total, refund: row.refund, refundMode: row.refund_mode });
+const mapCreditNote = row => ({ id: row.id, outletId: row.outlet_id, number: row.number, date: row.date, day: row.day, royaltyPct: row.royalty_pct, saleId: row.sale_id, saleNumber: row.sale_number, customerName: row.customer_name, customerPhone: row.customer_phone, reason: row.reason, lines: JSON.parse(row.lines), taxable: row.taxable, cgst: row.cgst, sgst: row.sgst, roundOff: row.round_off, total: row.total, refund: row.refund, refundMode: row.refund_mode });
 // Each sale carries `credited` (total of its credit notes) and, per line, `returned` units.
 function loadSales(whereSql = '', params = []) {
   const payments = groupPayments('sale', whereSql, params, 'sales');
@@ -119,10 +119,10 @@ function buildFullState(user, outlet) {
     settings: { taxMode: taxMode(), loyalty: loyaltyConfig() },
     materials: loadMaterials(outlet.id),
     products: db.prepare('SELECT * FROM products WHERE active = 1 ORDER BY rowid').all().map(mapProduct),
-    customers: (() => { const points = loyaltyStates(outlet.id); return db.prepare('SELECT name, phone, email, type, gstin, address FROM customers WHERE outlet_id = ? ORDER BY id DESC').all(outlet.id).map(row => ({ ...row, ...(points.get(row.phone) || { points: 0, expiringPoints: 0, expiresOn: null }) })); })(),
+    customers: (() => { const points = loyaltyStates(outlet.id); return db.prepare('SELECT name, phone, email, type, gstin, address, buyer_outlet_id AS buyerOutletId FROM customers WHERE outlet_id = ? ORDER BY id DESC').all(outlet.id).map(row => ({ ...row, ...(points.get(row.phone) || { points: 0, expiringPoints: 0, expiresOn: null }) })); })(),
     sales: loadSales('WHERE outlet_id = ?', [outlet.id]),
     purchases: loadPurchases('WHERE outlet_id = ?', [outlet.id]),
-    expenses: db.prepare('SELECT * FROM expenses WHERE outlet_id = ? ORDER BY date DESC, id DESC').all(outlet.id).map(mapExpense),
+    expenses: db.prepare('SELECT * FROM expenses WHERE outlet_id = ? AND voided_at IS NULL ORDER BY date DESC, id DESC').all(outlet.id).map(mapExpense),
     creditNotes: db.prepare('SELECT * FROM credit_notes WHERE outlet_id = ? ORDER BY date DESC, rowid DESC').all(outlet.id).map(mapCreditNote),
     vouchers: loadVouchers('WHERE outlet_id = ?', [outlet.id]),
     salesmen: db.prepare('SELECT * FROM salesmen WHERE outlet_id = ? ORDER BY name').all(outlet.id).map(mapSalesman),
@@ -211,7 +211,7 @@ function daySummary(outlet, day) {
     if (row.kind === 'sale') { if (row.amount >= 0) lines.sales[row.mode] = round2(lines.sales[row.mode] + row.amount); else lines.refunds[row.mode] = round2(lines.refunds[row.mode] - row.amount); }
     else lines.suppliers[row.mode] = round2(lines.suppliers[row.mode] + row.amount);
   });
-  db.prepare('SELECT mode, amount FROM expenses WHERE outlet_id = ? AND date = ?').all(outlet.id, day).forEach(row => { if (money.includes(row.mode)) lines.expenses[row.mode] = round2(lines.expenses[row.mode] + row.amount); });
+  db.prepare('SELECT mode, amount FROM expenses WHERE outlet_id = ? AND date = ? AND voided_at IS NULL').all(outlet.id, day).forEach(row => { if (money.includes(row.mode)) lines.expenses[row.mode] = round2(lines.expenses[row.mode] + row.amount); });
   if (outlet.type === 'hq') db.prepare('SELECT mode, amount FROM royalty_payments WHERE date = ?').all(day).forEach(row => { if (money.includes(row.mode)) lines.royalty[row.mode] = round2(lines.royalty[row.mode] + row.amount); });
   const modes = Object.fromEntries(money.map(mode => {
     // Cash is counted in the drawer, so everything in and out matters. Card, UPI and bank are checked against what was collected (less refunds): what the machine or app reports.
@@ -281,9 +281,13 @@ function closeDay({ body, user, outlet }) {
   });
 }
 // A closed day can be reopened by HQ (for example when a late bill was missed); the record is removed and the day is counted again.
-function reopenDay({ params, outlet }) {
+function reopenDay({ body, params, user, outlet }) {
   const row = db.prepare('SELECT * FROM day_closings WHERE id = ? AND outlet_id = ?').get(String(params.id), outlet.id);
   if (!row) throw new HttpError(404, 'Closing not found');
+  const reason = clean(body.reason, 500);
+  if (reason.length < 5) bad('Explain why this day is being reopened');
+  db.prepare('INSERT INTO closing_history(closing_id,outlet_id,day,snapshot,reopened_at,reopened_by,reason) VALUES(?,?,?,?,?,?,?)')
+    .run(row.id, row.outlet_id, row.day, JSON.stringify(row), now(), user.id, reason);
   db.prepare('DELETE FROM day_closings WHERE id = ?').run(row.id);
   return { ok: true };
 }
@@ -657,7 +661,7 @@ function saveSalesman({ body, params, outlet }) {
   const info = db.prepare('INSERT INTO salesmen (outlet_id, name) VALUES (?, ?)').run(outlet.id, name);
   return mapSalesman(db.prepare('SELECT * FROM salesmen WHERE id = ?').get(Number(info.lastInsertRowid)));
 }
-const mapCustomer = row => ({ name: row.name, phone: row.phone, email: row.email, type: row.type, gstin: row.gstin, address: row.address });
+const mapCustomer = row => ({ name: row.name, phone: row.phone, email: row.email, type: row.type, gstin: row.gstin, address: row.address, buyerOutletId: row.buyer_outlet_id });
 // Type, GSTIN and address as entered on the customer form. A franchise must have its own GSTIN.
 function partyDetails(body) {
   if (!PRICE_TYPES.includes(body.type)) bad('Choose retailer, wholesaler or franchise');
@@ -681,18 +685,20 @@ function createCustomer({ body, user, outlet }) {
     if (existing.name.toLowerCase() !== name.toLowerCase()) conflict(`This number is saved for ${existing.name}`);
     return mapCustomer(existing);
   }
-  db.prepare('INSERT INTO customers (outlet_id, name, phone, email, type, gstin, address) VALUES (?, ?, ?, ?, ?, ?, ?)').run(outlet.id, name, phone, email, party.type, party.gstin, party.address);
+  const buyerId = controls.buyer({ ...body, ...party }, null, user, outlet.id);
+  db.prepare('INSERT INTO customers (outlet_id, name, phone, email, type, gstin, address, buyer_outlet_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(outlet.id, name, phone, email, party.type, party.gstin, party.address, buyerId);
   return mapCustomer(db.prepare('SELECT * FROM customers WHERE outlet_id = ? AND phone = ?').get(outlet.id, phone));
 }
 // Change a customer's details or move them between retail, wholesale and franchise. Past bills keep the prices they were made at.
-function updateCustomer({ body, params, outlet }) {
+function updateCustomer({ body, params, user, outlet }) {
   const row = db.prepare('SELECT * FROM customers WHERE outlet_id = ? AND phone = ?').get(outlet.id, params.id);
   if (!row) throw new HttpError(404, 'Customer not found');
   const name = clean(body.name), email = clean(body.email, 120);
   if (!name) bad('Customer name is required');
   if (email && !/^\S+@\S+\.\S+$/.test(email)) bad('Enter a valid email address');
   const party = partyDetails(body);
-  db.prepare('UPDATE customers SET name = ?, email = ?, type = ?, gstin = ?, address = ? WHERE id = ?').run(name, email, party.type, party.gstin, party.address, row.id);
+  const buyerId = controls.buyer({ ...body, ...party }, row, user, outlet.id);
+  db.prepare('UPDATE customers SET name = ?, email = ?, type = ?, gstin = ?, address = ?, buyer_outlet_id=? WHERE id = ?').run(name, email, party.type, party.gstin, party.address, buyerId, row.id);
   return mapCustomer(db.prepare('SELECT * FROM customers WHERE id = ?').get(row.id));
 }
 
@@ -700,9 +706,9 @@ function updateCustomer({ body, params, outlet }) {
 // Matched by the outlet's own GSTIN: an invoice whose buyer GSTIN is this outlet's GSTIN can be loaded as a purchase.
 function franchiseInvoices(outlet) {
   const gstin = String(outlet.gstin || '').trim().toUpperCase();
-  if (!gstin) return { gstin: '', invoices: [] };
+
   const booked = new Map(db.prepare('SELECT source_sale_id, number FROM purchases WHERE outlet_id = ? AND source_sale_id IS NOT NULL').all(outlet.id).map(row => [row.source_sale_id, row.number]));
-  const invoices = loadSales('WHERE customer_gstin = ? AND outlet_id <> ?', [gstin, outlet.id]).map(sale => {
+  const invoices = loadSales('WHERE buyer_outlet_id = ? AND outlet_id <> ?', [outlet.id, outlet.id]).map(sale => {
     const stockLines = [], skipped = [];
     sale.lines.forEach(line => {
       const available = line.qty - (line.returned || 0), material = line.stockItem ? db.prepare('SELECT id, name, unit FROM materials WHERE id = ?').get(line.stockItem) : null;
@@ -712,17 +718,17 @@ function franchiseInvoices(outlet) {
       stockLines.push({ materialId: material.id, name: material.name, unit: material.unit, qty: available, total: round2(line.taxable * available / line.qty) });
     });
     const payable = round2(sale.total - (sale.credited || 0)), stockCost = round2(stockLines.reduce((sum, line) => sum + line.total, 0));
-    return { id: sale.id, number: sale.number, date: sale.date, day: sale.day, seller: getOutlet(sale.outletId).name, sellerGstin: getOutlet(sale.outletId).gstin, total: sale.total, credited: sale.credited || 0, payable, stockCost, extra: round2(payable - stockCost), stockLines, skipped, loadedAs: booked.get(sale.id) || null };
+    return { id: sale.id, number: sale.number, date: sale.date, day: sale.day, seller: getOutlet(sale.outletId).name, sellerGstin: getOutlet(sale.outletId).gstin, total: sale.total, credited: sale.credited || 0, payable, alreadyPaid: controls.sumPaid('sale', sale.id), stockCost, extra: round2(payable - stockCost), stockLines, skipped, loadedAs: booked.get(sale.id) || null };
   });
   return { gstin, invoices };
 }
 function createPurchaseFromInvoice({ body, user, outlet }) {
   const invoice = franchiseInvoices(outlet).invoices.find(entry => entry.id === String(body.sourceSaleId));
-  if (!invoice) throw new HttpError(404, "That invoice is not addressed to your outlet's GSTIN");
+  if (!invoice) throw new HttpError(404, "That invoice is not assigned to your outlet");
   if (invoice.loadedAs) conflict(`This invoice was already loaded as ${invoice.loadedAs}`);
   const date = isDateKey(body.date) ? body.date : invoice.day;
   const paid = body.paid === '' || body.paid === undefined || body.paid === null ? 0 : round2(Number(body.paid));
-  if (!(paid >= 0) || paid > invoice.payable) bad('Paid amount must be between ₹0 and the invoice total');
+  if (!(paid >= 0) || paid > round2(invoice.payable - invoice.alreadyPaid)) bad('Additional payment cannot exceed the remaining invoice balance');
   if (paid > 0) checkMode(body.mode);
   return tx(() => {
     const id = `pur-${crypto.randomBytes(8).toString('hex')}`, number = numbered(outlet, 'pur');
@@ -730,6 +736,7 @@ function createPurchaseFromInvoice({ body, user, outlet }) {
     db.prepare('INSERT INTO purchases (id, outlet_id, number, supplier, invoice_no, date, total, lines, created_by, extra_amount, source_sale_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .run(id, outlet.id, number, invoice.seller, invoice.number, date, invoice.payable, JSON.stringify(lines), user.id, invoice.extra, invoice.id);
     lines.forEach(line => { addStock(outlet.id, line.materialId, line.qty, line.total / line.qty); ledger(outlet.id, line.materialId, 'purchase', line.qty, cost4(line.total / line.qty), number, null, user.id, date); });
+    controls.booking(invoice.id, id, user);
     if (paid > 0) db.prepare('INSERT INTO payments (kind, ref_id, outlet_id, date, mode, amount, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)').run('purchase', id, outlet.id, now(), body.mode, paid, user.id);
     return loadPurchases('WHERE id = ?', [id])[0];
   });
@@ -773,11 +780,14 @@ function createExpense({ body, user, outlet }) {
   const info = db.prepare('INSERT INTO expenses (outlet_id, date, category, description, amount, mode, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)').run(outlet.id, date, category, description, amount, checkMode(body.mode), user.id);
   return mapExpense(db.prepare('SELECT * FROM expenses WHERE id = ?').get(Number(info.lastInsertRowid)));
 }
-function deleteExpense({ params, user, outlet }) {
+function deleteExpense({ body, params, user, outlet }) {
   const row = db.prepare('SELECT * FROM expenses WHERE id = ?').get(Number(params.id));
   // Managers can only remove their own outlet's entries; HQ can correct any outlet.
   if (!row || (user.role !== 'admin' && row.outlet_id !== outlet.id)) throw new HttpError(404, 'Expense not found');
-  db.prepare('DELETE FROM expenses WHERE id = ?').run(row.id);
+  if (row.voided_at) conflict('This expense is already voided');
+  const reason = clean(body.reason, 500);
+  if (reason.length < 5) bad('Explain why this expense is being voided');
+  db.prepare('UPDATE expenses SET voided_at=?, voided_by=?, void_reason=? WHERE id=?').run(now(), user.id, reason, row.id);
   return { ok: true };
 }
 
@@ -1285,7 +1295,7 @@ function saveUser({ body, params, user }) {
     if (target.id === user.id && (!active || role !== 'admin')) bad('You cannot deactivate or demote your own account');
     db.prepare('UPDATE users SET name = ?, role = ?, outlet_id = ?, active = ? WHERE id = ?').run(name, role, outletId, active, target.id);
     if (password) { const { salt, hash } = hashPassword(password); db.prepare('UPDATE users SET salt = ?, hash = ? WHERE id = ?').run(salt, hash, target.id); }
-    if (!active) db.prepare('DELETE FROM sessions WHERE user_id = ?').run(target.id);
+    if (!active || password || role !== target.role || outletId !== target.outlet_id) db.prepare('DELETE FROM sessions WHERE user_id = ?').run(target.id);
     return mapUser(db.prepare('SELECT * FROM users WHERE id = ?').get(target.id));
   }
   const username = String(body.username || '').trim().toLowerCase();
@@ -1310,7 +1320,7 @@ function networkData() {
     sales: loadSales(),
     purchases: loadPurchases(),
     stock: db.prepare(`${MATERIAL_SQL} ORDER BY s.outlet_id, m.rowid`).all().map(mapMaterial),
-    expenses: db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all().map(mapExpense),
+    expenses: db.prepare('SELECT * FROM expenses WHERE voided_at IS NULL ORDER BY date DESC, id DESC').all().map(mapExpense),
     creditNotes: db.prepare('SELECT * FROM credit_notes ORDER BY date DESC, rowid DESC').all().map(mapCreditNote),
     stockCounts: loadCounts("WHERE c.status = 'completed'"),
     royaltyPayments: db.prepare('SELECT id, outlet_id AS outletId, date, amount, mode, note FROM royalty_payments ORDER BY date DESC, id DESC').all(),
@@ -1321,9 +1331,22 @@ function hqStock() {
   return loadMaterials(hqOutlet().id).map(material => ({ id: material.id, name: material.name, unit: material.unit, stock: material.stock, costPerMl: material.costPerMl }));
 }
 
+const controls = require('./controls')({ db, tx, bad, conflict, forbid, round2, numbered, now, dateKey, stockRow, removeStock, ledger });
+
 /* ---------- Routing ---------- */
 // auth: 'none' | 'any' (every signed-in user) | 'staff' (admin or manager, not biller) | 'admin'. Handlers receive { body, params, query, user, outlet, ip, setCookie }.
 const routes = [
+  ['POST', '/api/sale-requests/:id/cancel', 'any', ctx => controls.cancelBill(ctx)],
+  ['GET', '/api/sale-requests/:id', 'any', ({ user, outlet, params }) => ({ exists: Boolean(db.prepare('SELECT 1 FROM sale_requests WHERE user_id=? AND outlet_id=? AND request_id=?').get(user.id, outlet.id, params.id)) })],
+  ['GET', '/api/reconciliation', 'admin', () => controls.reconciliation()],
+  ['POST', '/api/inter-outlet/:id/reconcile', 'admin', ctx => controls.reconcile(ctx)],
+  ['POST', '/api/inter-outlet/:id/link', 'admin', ctx => controls.linkLegacy(ctx)],
+  ['GET', '/api/audit', 'admin', ({ query }) => {
+    const before = Number(query.before) || Number.MAX_SAFE_INTEGER;
+    const rows = db.prepare('SELECT a.*, u.name AS actor FROM audit_events a LEFT JOIN users u ON u.id=a.actor_id WHERE a.id<? ORDER BY a.id DESC LIMIT 100').all(before);
+    return { rows, next: rows.length === 100 ? rows[rows.length-1].id : null };
+  }],
+  ['GET', '/api/closing-history', 'staff', ({ outlet }) => db.prepare('SELECT * FROM closing_history WHERE outlet_id=? ORDER BY id DESC LIMIT 100').all(outlet.id)],
   ['POST', '/api/login', 'none', ({ body, ip, setCookie }) => {
     if (blocked(ip)) throw new HttpError(429, 'Too many failed attempts. Try again in a few minutes');
     const row = db.prepare('SELECT * FROM users WHERE username = ? AND active = 1').get(String(body.username || '').trim().toLowerCase());
@@ -1335,11 +1358,13 @@ const routes = [
   }],
   ['POST', '/api/logout', 'none', ({ token, setCookie }) => { if (token) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(sha(token)); setCookie(null); return { ok: true }; }],
   ['GET', '/api/state', 'any', ({ user, outlet }) => { ensureStockRows(); return buildState(user, outlet); }],
-  ['POST', '/api/change-password', 'any', ({ body, user }) => {
+  ['POST', '/api/change-password', 'any', ({ body, user, setCookie }) => {
     if (!verifyPassword(String(body.current || ''), user.salt, user.hash)) bad('Your current password is incorrect');
     if (String(body.next || '').length < 8) bad('The new password must be at least 8 characters');
     const { salt, hash } = hashPassword(String(body.next));
     db.prepare('UPDATE users SET salt = ?, hash = ? WHERE id = ?').run(salt, hash, user.id);
+    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(user.id);
+    setCookie(createSession(user.id));
     return { ok: true };
   }],
   ['POST', '/api/customers', 'any', createCustomer],
@@ -1423,7 +1448,8 @@ function dispatch({ method, pathname, query, body, token, outletHeader, ip, setC
       if (route.auth === 'staff' && user.role === 'biller') forbid('Your biller login cannot do that');
       outlet = contextOutlet(user, outletHeader);
     }
-    return route.handler({ body, params: { ...match.groups }, query, user, outlet, token, ip, setCookie });
+    const response = controls.run({ method, pathname, body, params: { ...match.groups }, query, user, outlet, token, ip, setCookie }, route.handler);
+    return user?.role === 'biller' && pathname === '/api/sales' ? withoutCosts(response) : response;
   }
   throw new HttpError(404, 'Not found');
 }

@@ -171,7 +171,9 @@ $('#closingForm').addEventListener('click', event => {
   if (event.target.closest('#closingReopen')) {
     if (!confirm(`Reopen ${formatKey(closingData.day)}? The saved count is removed and the day can be counted again.`)) return;
     submitting(event.target.closest('#closingReopen'), async () => {
-      await api('POST', `/api/day-closings/${closingData.closing.id}/reopen`, {});
+      const reason = prompt('Why are you reopening this day? The original closing will be preserved.');
+      if (!reason || reason.trim().length < 5) return;
+      await api('POST', `/api/day-closings/${closingData.closing.id}/reopen`, { reason });
       await loadState();
       await openDayClosing(closingData.day);
       showToast('Day reopened. Count it again');

@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const crypto = require('node:crypto');
 const { DatabaseSync } = require('node:sqlite');
 
+let transactionDepth = 0;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const db = new DatabaseSync(path.join(DATA_DIR, process.env.DB_FILE || 'velour.db'));
@@ -430,9 +431,12 @@ function startBackupSchedule() {
 
 // Runs fn inside one transaction so a failed request never leaves half-written data.
 function tx(fn) {
-  db.exec('BEGIN IMMEDIATE');
-  try { const result = fn(); db.exec('COMMIT'); return result; }
-  catch (error) { db.exec('ROLLBACK'); throw error; }
+  const depth = transactionDepth++, savepoint = 'nested_' + depth;
+  try {
+    db.exec(depth ? 'SAVEPOINT ' + savepoint : 'BEGIN IMMEDIATE');
+    try { const result = fn(); db.exec(depth ? 'RELEASE ' + savepoint : 'COMMIT'); return result; }
+    catch (error) { db.exec(depth ? 'ROLLBACK TO ' + savepoint : 'ROLLBACK'); if (depth) db.exec('RELEASE ' + savepoint); throw error; }
+  } finally { transactionDepth--; }
 }
 
 /* ---------- Passwords ---------- */
@@ -493,5 +497,14 @@ function seedIfEmpty() {
   });
   return generated;
 }
+
+// Keep a consistent, separately named recovery copy before the controls upgrade.
+const controlsInstalled = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations'").get()
+  && db.prepare('SELECT 1 FROM schema_migrations WHERE version=?').get('2026-09-controls-1');
+if (!controlsInstalled && db.prepare('SELECT COUNT(*) AS n FROM outlets').get().n > 0) {
+  fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  backupTo(path.join(BACKUP_DIR, `pre-controls-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.db`));
+}
+require('./hardening-schema')(db);
 
 module.exports = { db, tx, nextItemCode, ensureItemCodes, nextProductCode, backupTo, startBackupSchedule, hashPassword, verifyPassword, nextCounter, peekCounter, ensureStockRows, seedIfEmpty };

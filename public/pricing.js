@@ -15,7 +15,7 @@ function renderCustomers() {
   });
   $('#customerList').innerHTML = list.length ? list.map(customer => {
     const stats = customerStats(customer.phone), type = typeOf(customer);
-    return `<div class="customer-row"><div class="customer-avatar">${escapeHtml(initialsOf(customer.name))}</div><span><strong>${escapeHtml(customer.name)}</strong><small>${formatPhone(customer.phone)}${customer.email ? ` · ${escapeHtml(customer.email)}` : ''}</small></span><span data-label="Type">${partyBadge(type) || '<span class="muted-text">Retail</span>'}${customer.gstin ? `<small>GSTIN ${escapeHtml(customer.gstin)}</small>` : ''}${customer.gstin && isAdmin() && state.outlets.some(outlet => outlet.gstin && outlet.gstin.toUpperCase() === customer.gstin) ? `<small class="party-tag party-franchise">Outlet ${escapeHtml(state.outlets.find(outlet => outlet.gstin && outlet.gstin.toUpperCase() === customer.gstin).code)} · can load this invoice</small>` : ''}</span><span data-label="Spend">${currency(stats.spent)}<small>${stats.visits} visit${stats.visits === 1 ? '' : 's'}</small>${state.settings.loyalty && state.settings.loyalty.enabled && customer.points ? `<small class="points-tag">${customer.points} points</small>` : ''}</span><span class="row-actions">${stats.due > 0 ? `<span class="due-text">Due ${currency(stats.due)}</span><button class="link-button accent" data-pay-customer="${customer.phone}">Receive</button>` : ''}${isBiller() ? '' : `${state.settings.loyalty && state.settings.loyalty.enabled ? `<button class="link-button" data-points-party="${customer.phone}">Points</button>` : ''}<button class="link-button" data-edit-party="${customer.phone}">Edit</button>`}</span></div>`;
+    return `<div class="customer-row"><div class="customer-avatar">${escapeHtml(initialsOf(customer.name))}</div><span><strong>${escapeHtml(customer.name)}</strong><small>${formatPhone(customer.phone)}${customer.email ? ` · ${escapeHtml(customer.email)}` : ''}</small></span><span data-label="Type">${partyBadge(type) || '<span class="muted-text">Retail</span>'}${customer.gstin ? `<small>GSTIN ${escapeHtml(customer.gstin)}</small>` : ''}${customer.buyerOutletId ? `<small class="party-tag party-franchise">Linked receiving outlet #${customer.buyerOutletId}</small>` : ''}</span><span data-label="Spend">${currency(stats.spent)}<small>${stats.visits} visit${stats.visits === 1 ? '' : 's'}</small>${state.settings.loyalty && state.settings.loyalty.enabled && customer.points ? `<small class="points-tag">${customer.points} points</small>` : ''}</span><span class="row-actions">${stats.due > 0 ? `<span class="due-text">Due ${currency(stats.due)}</span><button class="link-button accent" data-pay-customer="${customer.phone}">Receive</button>` : ''}${isBiller() ? '' : `${state.settings.loyalty && state.settings.loyalty.enabled ? `<button class="link-button" data-points-party="${customer.phone}">Points</button>` : ''}<button class="link-button" data-edit-party="${customer.phone}">Edit</button>`}</span></div>`;
   }).join('') : `<div class="purchase-empty">${customers.length ? 'No customers match.' : 'No customers yet. Retailers are added when you create a bill; add wholesalers and franchisees with Add customer.'}</div>`;
 }
 $('#partyFilter').addEventListener('click', event => { const button = event.target.closest('[data-party-filter]'); if (button) { partyFilter = button.dataset.partyFilter; renderCustomers(); } });
@@ -32,6 +32,9 @@ function syncPartyType() {
 function openPartyModal(customer = null) {
   editingParty = customer;
   $('#partyForm').reset();
+  $('#partyOutlet').innerHTML = '<option value="">Not linked</option>' + state.outlets.filter(o => o.type === 'franchise' && o.id !== state.outlet.id && o.active).map(o => `<option value="${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('');
+  $('#partyOutlet').value = customer?.buyerOutletId || '';
+  $('#partyOutlet').disabled = !isAdmin();
   partyFieldIds.forEach(id => setFieldError(id, ''));
   $('#partyLabel').textContent = customer ? 'EDIT CUSTOMER' : 'NEW CUSTOMER';
   $('#partyTitle').textContent = customer ? customer.name : 'Add customer';
@@ -61,7 +64,7 @@ $('#partyForm').addEventListener('submit', event => {
     setFieldError('partyEmail', email && !/^\S+@\S+\.\S+$/.test(email) ? 'Enter a valid email address' : '');
     setFieldError('partyGstin', gstin && !isValidGstin(gstin) ? 'Enter a valid 15-character GSTIN' : type === 'franchise' && !gstin ? 'A franchise needs its own GSTIN' : '');
     if ($('#partyForm .customer-input.invalid')) { $('#partyForm .customer-input.invalid input').focus(); return; }
-    const body = { name, email, type, gstin, address: $('#partyAddress').value.trim() };
+    const body = { name, email, type, gstin, address: $('#partyAddress').value.trim(), ...(isAdmin() ? { buyerOutletId: type === 'franchise' ? ($('#partyOutlet').value || null) : null } : {}) };
     if (editingParty) await api('PUT', `/api/customers/${editingParty.phone}`, body);
     else await api('POST', '/api/customers', { ...body, phone });
     const wasEditing = Boolean(editingParty);

@@ -378,6 +378,7 @@
       <div class="field-group"><label for="partyPhone">Mobile number <span class="req">*</span></label><div class="customer-input"><span class="phone-prefix">+91</span><input id="partyPhone" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off" aria-describedby="partyPhoneError" /></div><small class="field-error" id="partyPhoneError" role="alert"></small></div>
       <div class="field-group"><label for="partyEmail">Email <span class="optional">(optional)</span></label><div class="customer-input"><input id="partyEmail" type="email" placeholder="name@example.com" autocomplete="off" aria-describedby="partyEmailError" /></div><small class="field-error" id="partyEmailError" role="alert"></small></div>
       <div class="field-group"><label for="partyGstin" id="partyGstinLabel">GSTIN <span class="optional">(15 characters)</span></label><div class="customer-input"><input id="partyGstin" maxlength="15" placeholder="27ABCDE1234F1Z5" autocomplete="off" aria-describedby="partyGstinError" /></div><small class="field-error" id="partyGstinError" role="alert"></small></div>
+      <div class="field-group role-admin"><label for="partyOutlet">Receiving franchise outlet</label><div class="customer-input"><select id="partyOutlet"><option value="">Not linked</option></select></div><small>HQ must select the exact receiving outlet before a franchise bill can be issued.</small></div>
       <div class="field-group"><label for="partyAddress">Address <span class="optional">(printed on the invoice)</span></label><div class="customer-input"><input id="partyAddress" maxlength="240" autocomplete="off" /></div></div>
       <button class="primary-button" type="submit" id="partySubmit">Save customer</button>
     </form>
@@ -438,6 +439,8 @@
         <h3 class="modal-subhead">Data backup</h3>
         <p class="modal-note">The server saves a dated copy every day (last 14 kept). Download one to keep off the server. It contains every outlet's data, so store it safely.</p>
         <button class="outline-button" type="button" id="downloadBackup">Download backup ↓</button>
+        <button class="outline-button" type="button" id="openAudit">Audit history</button>
+        <button class="outline-button" type="button" id="openReconciliation">Franchise reconciliation</button>
       </div>
       <h3 class="modal-subhead">Printing <span class="optional">(this computer)</span></h3>
       <div class="field-group"><label for="setPrintFormat">Paper size</label><div class="customer-input"><select id="setPrintFormat"></select></div></div>
@@ -610,6 +613,7 @@
   <script src="manufacturing.js"></script>
   <script src="verification.js"></script>
   <script src="views.js"></script>
+  <script src="controls-ui.js"></script>
   <script src="boot.js"></script>
 </body>
 </html>

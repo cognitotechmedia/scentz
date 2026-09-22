@@ -210,7 +210,7 @@ function renderHqInvoices() {
   box.classList.toggle('hidden', !invoices.length);
   if (!invoices.length) return;
   const waiting = invoices.filter(invoice => !invoice.loadedAs);
-  $('#hqInvoiceNote').textContent = waiting.length ? `${waiting.length} waiting to be loaded · matched by your GSTIN ${hqInvoiceData.gstin}` : 'All loaded';
+  $('#hqInvoiceNote').textContent = waiting.length ? `${waiting.length} waiting to be loaded · assigned specifically to your outlet` : 'All loaded';
   $('#hqInvoiceRows').innerHTML = invoices.map(invoice => `<div class="hq-invoice-row"><span><strong>${escapeHtml(invoice.number)}</strong><small>${escapeHtml(invoice.seller)} · ${formatKey(invoice.day)}</small></span><span data-label="Stock lines">${invoice.stockLines.length} item${invoice.stockLines.length === 1 ? '' : 's'} to stock${invoice.skipped.length ? `<small>Not stock-counted: ${invoice.skipped.map(escapeHtml).join(', ')}</small>` : ''}</span><span class="num" data-label="Invoice total">${currency(invoice.payable)}<small>GST and other ${currency(invoice.extra)}</small></span><span class="row-actions">${invoice.loadedAs ? `<span class="status-badge status-paid">Loaded as ${escapeHtml(invoice.loadedAs)}</span>` : `<button class="primary-button small-button" type="button" data-load-invoice="${invoice.id}">Load into purchase</button>`}</span></div>`).join('');
 }
 $('#hqInvoiceRows').addEventListener('click', event => {
@@ -227,7 +227,7 @@ function openInvoicePurchase(invoice) {
   $('#invoiceLoaded').classList.remove('hidden');
   $('#invoiceLoaded').innerHTML = `<div class="invoice-banner"><div><span class="bill-label">LOADED FROM INVOICE</span><strong>${escapeHtml(invoice.number)}</strong><small>${escapeHtml(invoice.seller)}${invoice.sellerGstin ? ` · GSTIN ${escapeHtml(invoice.sellerGstin)}` : ''} · ${formatKey(invoice.day)}</small></div><button class="outline-button" type="button" id="detachInvoice">Cancel loading</button></div>
     <div class="table-scroll"><table class="report-table"><thead><tr><th>Item</th><th class="num">Quantity</th><th class="num">Cost before GST</th><th class="num">Per unit</th></tr></thead><tbody>${invoice.stockLines.map(line => `<tr><td>${escapeHtml(line.name)}</td><td class="num">${fmtQty(line.qty, line.unit)}</td><td class="num">${currency(line.total)}</td><td class="num">${currency(round2(line.total / line.qty))}</td></tr>`).join('') || '<tr><td colspan="4">No stock-counted items on this invoice.</td></tr>'}</tbody><tfoot><tr><td>GST and other charges</td><td></td><td class="num">${currency(invoice.extra)}</td><td></td></tr><tr><td>Invoice total payable</td><td></td><td class="num">${currency(invoice.payable)}</td><td></td></tr></tfoot></table></div>
-    <p class="report-footnote">Quantities and amounts come from the invoice and cannot be edited here. Stock is added at the cost before GST; the GST is part of what you owe HQ.${invoice.skipped.length ? ` Not added to stock because the product is not stock-counted: ${invoice.skipped.map(escapeHtml).join(', ')}.` : ''}${invoice.credited ? ` HQ has already credited ${currency(invoice.credited)} for returns.` : ''} Set how much you have paid below (0 keeps it as a payable).</p>`;
+    <p class="report-footnote">Quantities and amounts come from the invoice and cannot be edited here. Stock is added at the cost before GST; the GST is part of what you owe HQ.${invoice.skipped.length ? ` Not added to stock because the product is not stock-counted: ${invoice.skipped.map(escapeHtml).join(', ')}.` : ''}${invoice.credited ? ` HQ has already credited ${currency(invoice.credited)} for returns.` : ''} Payments already recorded by the seller (${currency(invoice.alreadyPaid || 0)}) will be carried over. Enter only an additional payment below; it is recorded on both sides automatically.</p>`;
   $('#purchaseTotal').textContent = currency(invoice.payable);
   $('#invoiceLoaded').scrollIntoView({ behavior: 'smooth', block: 'center' });
   showToast(`${invoice.number} loaded. Check it, set the payment and press Save purchase`);
@@ -244,7 +244,7 @@ function closeInvoicePurchase() {
 $('#invoiceLoaded').addEventListener('click', event => { if (event.target.closest('#detachInvoice')) closeInvoicePurchase(); });
 async function savePurchaseFromInvoice() {
   const invoice = activeInvoice, paid = $('#purchasePaid').value === '' ? 0 : round2(Number($('#purchasePaid').value));
-  if (!(paid >= 0) || paid > invoice.payable) { showToast(`Paid must be between ₹0 and ${currency(invoice.payable)}`); return; }
+  if (!(paid >= 0) || paid > round2(invoice.payable - (invoice.alreadyPaid || 0))) { showToast(`Paid must be between ₹0 and ${currency(invoice.payable)}`); return; }
   const purchase = await api('POST', '/api/purchases', { sourceSaleId: invoice.id, date: $('#purchaseDate').value, paid, mode: $('#purchaseMode').value });
   closeInvoicePurchase();
   await reloadAll();

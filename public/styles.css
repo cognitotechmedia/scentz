@@ -1176,3 +1176,5 @@ small.party-tag.party-franchise { color: #5b21b6; background: none; }
 .rc-note { color: var(--muted); font-weight: 400; font-size: 12.5px; }
 .rc-foot { margin: 10px 0 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
 @media (max-width: 720px) { .recon-grid { grid-template-columns: 1fr; gap: 16px; } }
+/* Review snapshots must stay readable inside the dialog on narrow screens. */
+.audit-json { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 420px; overflow: auto; font-size: 12px; }

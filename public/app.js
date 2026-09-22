@@ -336,6 +336,7 @@ function refreshViews() {
 // Re-renders everything after the server state was reloaded.
 function refreshEverything() {
   syncCartWithCatalog(); renderProducts(); renderCart(); purchaseGrid.refreshAll(); refreshViews(); renderChrome();
+  renderPendingBill();
 }
 async function reloadAll() {
   await loadState();
@@ -486,11 +487,12 @@ $('#expenseRows').addEventListener('click', event => {
   const button = event.target.closest('[data-delete-expense]');
   if (!button) return;
   const expense = expenses.find(entry => String(entry.id) === button.dataset.deleteExpense);
-  if (!confirm(`Delete this ${currency(expense.amount)} ${expense.category} expense?`)) return;
+  const reason = prompt('Why are you voiding this expense? The original entry will remain in the audit history.');
+  if (!reason || reason.trim().length < 5) return;
   submitting(button, async () => {
-    await api('DELETE', `/api/expenses/${expense.id}`, {});
+    await api('DELETE', `/api/expenses/${expense.id}`, { reason });
     await reloadAll();
-    showToast('Expense deleted');
+    showToast('Expense voided; history retained');
   });
 });
 
@@ -598,12 +600,13 @@ function resetBillForm() {
 }
 $('#createBill').addEventListener('click', () => {
   submitting($('#createBill'), async () => {
+    if (pendingBill()) { await recoverPendingBill(); return; }
     const customerCheck = checkCustomerFields('customerName', 'customerPhone');
     const bill = currentBill();
     const redeem = redeemCheck(bill), problem = redeem.message || paymentProblem(payableNow(bill));
     updateDue(bill);
     if (!customerCheck.ok || problem) { showToast(problem || 'Fix the highlighted fields to create the bill'); const bad = $('.bill-panel .customer-input.invalid input'); if (bad) bad.focus(); return; }
-    const sale = await api('POST', '/api/sales', {
+    const sale = await submitSafeBill({
       customerName: customerCheck.name, customerPhone: customerCheck.phone,
       lines: db.cart.map(item => ({ productId: item.productId, qty: item.quantity, recipe: item.recipe ? item.recipe.map(line => ({ id: line.id, ml: line.ml })) : undefined, extras: item.extras && item.extras.length ? item.extras.map(extra => ({ id: extra.id, qty: extra.qty })) : undefined })),
       salesmanId: $('#billSalesman').value || undefined,

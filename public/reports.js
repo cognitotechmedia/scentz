@@ -301,9 +301,9 @@ function royaltyReport(range, data) {
     const own = data.sales.filter(sale => sale.outletId === outlet.id);
     const ownReturns = data.creditNotes.filter(note => note.outletId === outlet.id);
     const period = round2(sumOf(own.filter(sale => inRange(sale.day, range)), sale => sale.taxable) - sumOf(ownReturns.filter(note => inRange(note.day, range)), note => note.taxable));
-    const lifetimeDue = round2((sumOf(own, sale => sale.taxable) - sumOf(ownReturns, note => note.taxable)) * outlet.royaltyPct / 100);
+    const lifetimeDue = round2(sumOf(own, sale => round2(sale.taxable * sale.royaltyPct / 100)) - sumOf(ownReturns, note => round2(note.taxable * note.royaltyPct / 100)));
     const paid = sumOf(data.royaltyPayments.filter(payment => payment.outletId === outlet.id), payment => payment.amount);
-    return { outlet, period, periodRoyalty: round2(period * outlet.royaltyPct / 100), lifetimeDue, paid, outstanding: round2(lifetimeDue - paid) };
+    return { outlet, period, periodRoyalty: round2(sumOf(own.filter(sale => inRange(sale.day, range)), sale => round2(sale.taxable * sale.royaltyPct / 100)) - sumOf(ownReturns.filter(note => inRange(note.day, range)), note => round2(note.taxable * note.royaltyPct / 100))), lifetimeDue, paid, outstanding: round2(lifetimeDue - paid) };
   });
   const payments = data.royaltyPayments.filter(payment => inRange(payment.date, range));
   reportExport = { name: 'royalty-report.csv', rows: [['Outlet', 'Royalty %', 'Net sales (period)', 'Royalty (period)', 'Royalty due (all time)', 'Received (all time)', 'Outstanding'], ...rows.map(row => [row.outlet.code, row.outlet.royaltyPct, row.period, row.periodRoyalty, row.lifetimeDue, row.paid, row.outstanding])] };
@@ -311,7 +311,7 @@ function royaltyReport(range, data) {
   return `<div class="kpi-grid">${kpi('Royalty for period', currency(sumOf(rows, row => row.periodRoyalty)), range.label)}${kpi('Franchise net sales', currency(sumOf(rows, row => row.period)), 'ex-GST, after discounts')}${kpi('Received', currency(sumOf(payments, payment => payment.amount)), 'in this period')}${kpi('Outstanding', currency(sumOf(rows, row => row.outstanding)), 'all time, all outlets')}</div>
     ${tableCard('Royalty by outlet', [['Outlet'], ['Rate', true], ['Net sales', true], ['Royalty (period)', true], ['Due (all time)', true], ['Received', true], ['Outstanding', true], ['']], rows.map(row => [`${escapeHtml(row.outlet.name)}<small>${row.outlet.code}</small>`, `${row.outlet.royaltyPct}%`, currency(row.period), currency(row.periodRoyalty), currency(row.lifetimeDue), currency(row.paid), row.outstanding > 0 ? `<span class="due-text">${currency(row.outstanding)}</span>` : currency(row.outstanding), `<button class="link-button accent" data-royalty-outlet="${row.outlet.id}" data-due="${Math.max(0, row.outstanding)}">Record payment</button>`]), { empty: 'No franchise outlets in this view.', foot: ['Total', '', currency(sumOf(rows, row => row.period)), currency(sumOf(rows, row => row.periodRoyalty)), currency(sumOf(rows, row => row.lifetimeDue)), currency(sumOf(rows, row => row.paid)), currency(sumOf(rows, row => row.outstanding)), ''] })}
     ${tableCard('Royalty payments received', [['Date'], ['Outlet'], ['Mode'], ['Note'], ['Amount', true]], payments.map(payment => [formatKey(payment.date), escapeHtml(name(payment.outletId)), payment.mode, escapeHtml(payment.note || '—'), currency(payment.amount)]), { empty: 'No royalty payments recorded in this period.' })}
-    <p class="report-footnote">Royalty is the outlet's rate applied to net sales excluding GST, after discounts and returns. A rate change applies to all past sales.</p>`;
+    <p class="report-footnote">Royalty is the outlet's rate applied to net sales excluding GST, after discounts and returns. Each invoice and its returns retain the rate saved when billed. Earlier invoices use the rate configured at the upgrade date because older rate history was not recorded. The displayed outlet rate applies to new bills only.</p>`;
 }
 
 /* ---------- Render and wire up ---------- */
