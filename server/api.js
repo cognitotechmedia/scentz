@@ -1335,7 +1335,10 @@ const controls = require('./controls')({ db, tx, bad, conflict, forbid, round2, 
 
 /* ---------- Routing ---------- */
 // auth: 'none' | 'any' (every signed-in user) | 'staff' (admin or manager, not biller) | 'admin'. Handlers receive { body, params, query, user, outlet, ip, setCookie }.
+const bulkImport = require('./bulk-import')({ db, saveProduct, createCustomer, HttpError });
 const routes = [
+  ['POST', '/api/import/products', 'admin', bulkImport('products')],
+  ['POST', '/api/import/customers', 'staff', bulkImport('customers')],
   ['POST', '/api/sale-requests/:id/cancel', 'any', ctx => controls.cancelBill(ctx)],
   ['GET', '/api/sale-requests/:id', 'any', ({ user, outlet, params }) => ({ exists: Boolean(db.prepare('SELECT 1 FROM sale_requests WHERE user_id=? AND outlet_id=? AND request_id=?').get(user.id, outlet.id, params.id)) })],
   ['GET', '/api/reconciliation', 'admin', () => controls.reconciliation()],
