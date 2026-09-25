@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scentz | Billing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="login-screen" id="loginScreen">
+    <form class="login-card" id="loginForm" novalidate>
+      <div class="brand-block login-brand"><div class="brand-mark">S</div><div><div class="brand-name">Scentz</div><div class="brand-meta">FRAGRANCE HOUSE</div></div></div>
+      <h1>Sign in</h1>
+      <p>Use the account HQ created for you.</p>
+      <div class="field-group"><label for="loginUser">Username</label><div class="customer-input"><input id="loginUser" autocomplete="username" autocapitalize="none" spellcheck="false" /></div></div>
+      <div class="field-group"><label for="loginPass">Password</label><div class="customer-input"><input id="loginPass" type="password" autocomplete="current-password" /></div></div>
+      <small class="field-error" id="loginError" role="alert"></small>
+      <button class="primary-button" type="submit" id="loginSubmit">Sign in</button>
+    </form>
+  </div>
+
+  <div class="app-shell hidden" id="appRoot">
+    <aside class="sidebar">
+      <div class="brand-block">
+        <div class="brand-mark">S</div>
+        <div>
+          <div class="brand-name">Scentz</div>
+          <div class="brand-meta" id="brandOutlet">FRAGRANCE HOUSE</div>
+        </div>
+      </div>
+
+      <nav class="main-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-view="billing"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></span><span>New bill</span></button>
+        <button class="nav-item" data-view="sales"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span>Sales</span><span class="nav-count" id="navSalesCount">0</span></button>
+        <button class="nav-item" data-view="vouchers"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5h.01M17.5 14.5h.01"/></svg></span><span>Receipts &amp; payments</span></button>
+        <button class="nav-item" data-view="products"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></svg></span><span>Products</span></button>
+        <button class="nav-item role-admin" data-view="prices"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.2"/></svg></span><span>Price update</span></button>
+        <button class="nav-item role-staff" data-view="purchases"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 20h16"/></svg></span><span>Purchases</span></button>
+        <button class="nav-item role-admin" data-view="manufacturing"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 001.8 3h10.4a2 2 0 001.8-3l-5-9V3"/><path d="M7.5 15h9"/></svg></span><span>Manufacturing</span></button>
+        <button class="nav-item role-staff" data-view="expenses"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v.01M18 14.5v.01"/></svg></span><span>Expenses</span></button>
+        <button class="nav-item role-staff" data-view="closing"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span><span>Day closing</span></button>
+        <button class="nav-item" data-view="customers"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .6 3.5 2.4 3.5 5.5"/></svg></span><span>Customers</span></button>
+        <button class="nav-item role-staff" data-view="loyalty"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg></span><span>Loyalty points</span></button>
+        <button class="nav-item role-staff" data-view="reports"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11M10 20V4M16 20v-6M22 20H2"/></svg></span><span>Reports</span></button>
+        <div class="nav-section role-staff">STOCK &amp; NETWORK</div>
+        <button class="nav-item role-staff" data-view="opening"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span><span>Opening stock</span></button>
+        <button class="nav-item role-staff" data-view="verification"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5h6M9 13l2 2 4-4"/></svg></span><span>Stock verification</span></button>
+        <button class="nav-item role-staff" data-view="transfers"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg></span><span>Transfers</span><span class="nav-count hidden" id="navTransferCount">0</span></button>
+        <button class="nav-item role-admin" data-view="network"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5L6 17M12 11.5l6 5.5"/></svg></span><span>Outlets &amp; users</span></button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="store-status"><span class="status-dot"></span><span>Store open</span><span class="status-time">9:00–20:00</span></div>
+        <button class="help-link" id="signOut" type="button"><span>↪</span> Sign out</button>
+        <div class="user-chip"><div class="avatar" id="userAvatar">MS</div><div><strong id="userName">—</strong><small id="userRole">—</small></div></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow" id="todayLabel"></div>
+          <h1 id="page-title">Create a new bill</h1>
+        </div>
+        <div class="top-actions">
+          <div class="outlet-switch role-admin"><label for="outletSwitch">Outlet</label><div class="customer-input"><select id="outletSwitch"></select></div></div>
+          <button class="icon-button" aria-label="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 0112 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 004 0"/></svg><span class="notification-dot hidden" id="lowStockDot"></span></button>
+          <button class="outline-button" id="openSettings">Store settings <span>⌄</span></button>
+        </div>
+      </header>
+
+      <section class="summary-strip" aria-label="Business summary">
+        <div class="summary-item"><span class="summary-label">TODAY'S SALES</span><strong id="todaySales">₹0</strong><span class="summary-trend hidden" id="todayTrend"></span></div>
+        <div class="summary-item"><span class="summary-label">BILLS THIS MONTH</span><strong id="billCount">0</strong><span class="summary-muted" id="billSub">none today</span></div>
+        <div class="summary-item"><span class="summary-label">TOP SELLER</span><strong id="topSeller">—</strong><span class="summary-muted" id="topSellerMeta">last 7 days</span></div>
+        <div class="summary-item"><span class="summary-label">OUTSTANDING DUES</span><strong id="duesTotal">₹0</strong><span class="summary-muted" id="duesMeta">all clear</span></div>
+      </section>
+
+      <div class="workspace" id="billingView">
+        <section class="catalog-panel">
+          <div class="section-heading"><div><h2>Choose a product</h2><p>Blended products record the exact materials used; packed products go straight to the bill</p></div><span class="catalog-count" id="catalogCount">4 products</span></div>
+          <div class="filter-row"><div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="productSearch" type="search" placeholder="Search products" /></div><div class="category-tabs"><button class="category-tab active" data-category="all">All products</button><button class="category-tab" data-category="signature">Packed perfumes</button></div></div>
+          <div class="product-grid" id="productGrid"></div>
+        </section>
+
+        <aside class="bill-panel">
+          <div class="bill-header"><div><span class="bill-label">DRAFT BILL</span><h2 id="invoiceNumber">#INV</h2></div><button class="more-button" aria-label="More options">•••</button></div>
+          <div class="customer-field">
+            <div class="field-group" id="customerNameWrap"><label for="customerName">Customer name <span class="req">*</span></label><div class="customer-input"><span class="mini-avatar">+</span><input id="customerName" placeholder="Search or enter customer name" autocomplete="off" required aria-describedby="customerNameError" /><button id="customerSelect" type="button" aria-label="Select customer" aria-expanded="false">⌄</button></div><small class="field-error" id="customerNameError" role="alert"></small></div>
+            <div class="field-group"><label for="customerPhone">Mobile number <span class="req">*</span></label><div class="customer-input"><span class="phone-prefix">+91</span><input id="customerPhone" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off" required aria-describedby="customerPhoneError" /></div><small class="field-error" id="customerPhoneError" role="alert"></small></div>
+            <div class="price-list-badge hidden" id="priceListBadge" role="status"></div>
+            <div class="loyalty-box hidden" id="loyaltyBox" role="group" aria-label="Loyalty points">
+              <div class="loyalty-head"><strong>Loyalty points</strong><span id="loyaltyBalance"></span></div>
+              <div class="loyalty-redeem hidden" id="loyaltyRedeem"><div class="customer-input"><input id="redeemInput" type="text" inputmode="numeric" placeholder="Points to use" autocomplete="off" aria-label="Points to redeem" /></div><button class="outline-button" type="button" id="redeemMax">Use max</button><button class="link-button" type="button" id="redeemClear">Clear</button></div>
+              <small class="loyalty-error" id="redeemError" role="alert"></small>
+              <small class="loyalty-note" id="loyaltyNote"></small>
+            </div>
+            <div class="field-group salesman-field"><label for="billSalesman"><span>Salesman <span class="optional">(credited with this sale)</span></span><button class="link-button role-staff" type="button" id="manageSalesmen">Manage</button></label><div class="customer-input"><select id="billSalesman"></select></div></div>
+          </div>
+          <div class="cart-list" id="cartList"></div>
+          <div class="bill-footer">
+            <div class="totals">
+              <div><span>Subtotal</span><strong id="subtotal">₹0</strong></div>
+              <div><span>Discount</span><button class="discount-button" id="discountButton" type="button">Add discount <span>＋</span></button></div>
+              <div class="discount-editor hidden" id="discountEditor"><select id="discountType" aria-label="Discount type"><option value="amount">₹</option><option value="percent">%</option></select><input id="discountValue" type="number" min="0" step="0.01" placeholder="0" aria-label="Discount value" /><button class="link-button" id="discountClear" type="button">Remove</button></div>
+              <div class="tax-row"><span>Taxable value</span><strong id="taxable">₹0</strong></div>
+              <div class="tax-row"><span>CGST / SGST</span><strong id="gstSplit">₹0 / ₹0</strong></div>
+              <div class="tax-row hidden" id="roundOffRow"><span>Round off</span><strong id="roundOff">₹0</strong></div>
+              <div class="total-row"><span>Total payable</span><strong id="total">₹0</strong></div>
+              <div class="tax-row hidden" id="redeemRow"><span>Paid with loyalty points</span><strong id="redeemAmount">−₹0</strong></div>
+              <div class="tax-row hidden" id="toPayRow"><span>Balance to pay</span><strong id="toPayAmount">₹0</strong></div>
+            </div>
+            <div class="payment-box">
+              <div id="paymentLines" class="payment-lines"></div>
+              <button class="link-button split-button" id="addSplit" type="button">＋ Split payment</button>
+              <small class="field-error" id="amountReceivedError" role="alert"></small>
+              <div class="due-row hidden" id="dueRow"><span>Balance due (credit)</span><strong id="dueAmount">₹0</strong></div>
+              <div class="change-row hidden" id="changeRow"><span>Balance to return to customer</span><strong id="changeAmount">₹0</strong></div>
+            </div>
+            <button class="primary-button" id="createBill" disabled><span>✓</span> Create bill</button>
+            <button class="secondary-button" id="saveDraft">Save as draft</button>
+          </div>
+        </aside>
+      </div>
+
+      <section class="secondary-view hidden" id="salesView"><div class="view-title"><div><div class="eyebrow">TRANSACTIONS</div><h2>Sales overview</h2></div><button class="outline-button" id="exportSales">Export CSV ↓</button></div><div class="sales-table"><div class="table-head"><span>Invoice</span><span>Customer</span><span>Items</span><span>Amount</span><span>Status</span><span></span></div><div id="salesRows"></div></div>
+        <h3 class="subhead role-staff">Credit notes</h3>
+        <div class="purchase-table role-staff"><div class="cn-head"><span>Credit note</span><span>Against bill</span><span>Customer</span><span class="num">Credited</span><span class="num">Refunded</span><span></span></div><div id="creditRows"></div></div>
+      </section>
+
+      <section class="secondary-view hidden" id="closingView">
+        <div class="view-title"><div><div class="eyebrow">DAY END</div><h2>Day closing</h2><p class="view-subtitle" id="closingSubtitle"></p></div><div class="view-actions"><label class="closing-date-box" for="closingDate"><span>Day</span><div class="customer-input"><input id="closingDate" type="date" /></div></label></div></div>
+        <div id="closingNotice"></div>
+        <div class="kpi-grid" id="closingKpis"></div>
+        <form class="purchase-bill closing-form" id="closingForm" novalidate>
+          <div id="closingTable"></div>
+          <div id="closingRecon"></div>
+          <details class="closing-details"><summary>What makes up the system totals</summary><div id="closingBreakdown"></div></details>
+          <div id="closingDrawer"></div>
+          <div class="closing-notes"><label for="closingNotes">Notes <span class="optional">(needed when something does not match)</span></label><div class="customer-input"><input id="closingNotes" maxlength="500" autocomplete="off" placeholder="e.g. Rs 50 short: change given twice" /></div></div>
+          <small class="field-error" id="closingError" role="alert"></small>
+          <div class="closing-actions" id="closingActions"></div>
+        </form>
+        <h3 class="subhead" id="closingHistoryHead">Past closings</h3>
+        <div class="purchase-table"><div class="closing-hist-head"><span>Day</span><span class="num">Opening</span><span class="num">Cash expected</span><span class="num">Cash counted</span><span class="num">Difference</span><span class="num">Deposit</span><span>Closed by</span></div><div id="closingHistory"></div></div>
+      </section>
+
+      <section class="secondary-view hidden" id="loyaltyView">
+        <div class="view-title"><div><div class="eyebrow">CUSTOMER REWARDS</div><h2>Loyalty points</h2><p class="view-subtitle" id="loyaltySubtitle"></p></div><div class="view-actions"><button class="primary-button small-button role-admin" id="loyaltyEditButton" type="button">Set up program</button></div></div>
+        <div class="loyalty-status" id="loyaltyStatus"></div>
+        <div class="kpi-grid" id="loyaltyKpis"></div>
+        <h3 class="subhead">How it works</h3>
+        <div class="report-card" id="loyaltyRules"></div>
+        <h3 class="subhead" id="loyaltyMembersHead">Customers with points</h3>
+        <div class="purchase-table"><div id="loyaltyMembers"></div></div>
+      </section>
+
+      <section class="secondary-view hidden" id="vouchersView">
+        <div class="view-title"><div><div class="eyebrow">MONEY</div><h2>Receipts &amp; payments</h2><p class="view-subtitle" id="voucherSubtitle"></p></div><div class="view-actions"><button class="outline-button" id="exportVouchers" type="button">Export CSV ↓</button></div></div>
+        <div class="voucher-tabs"><div class="segmented" id="voucherKind" role="group" aria-label="Voucher type"><button type="button" class="active" data-voucher-kind="receipt">Receipt · from customers</button><button type="button" class="role-staff" data-voucher-kind="payment">Payment · to suppliers</button></div></div>
+        <div class="kpi-grid voucher-kpis" id="voucherKpis"></div>
+        <form class="purchase-bill voucher-form" id="voucherForm" novalidate>
+          <div class="voucher-head">
+            <div class="field-group"><label for="voucherParty" id="voucherPartyLabel">Customer</label><div class="customer-input"><input id="voucherParty" placeholder="Search name or mobile number" autocomplete="off" /></div></div>
+            <div class="field-group"><label for="voucherDate">Date</label><div class="customer-input"><input id="voucherDate" type="date" /></div></div>
+            <div class="field-group"><label for="voucherMode">Mode</label><div class="customer-input"><select id="voucherMode"></select></div></div>
+            <div class="field-group"><label for="voucherNote">Reference <span class="optional">(optional)</span></label><div class="customer-input"><input id="voucherNote" maxlength="200" placeholder="Cheque no., UPI ref…" autocomplete="off" /></div></div>
+          </div>
+          <div class="voucher-party hidden" id="voucherPartyBox"></div>
+          <div class="voucher-bills" id="voucherBillsBox"><div class="vb-head"><span id="vbBillHead">Bill</span><span class="num">Bill total</span><span class="num">Still due</span><span class="num" id="vbPayHead">Receive now</span></div><div id="voucherBills"><div class="purchase-empty">Choose a customer to see what is outstanding.</div></div></div>
+          <div class="purchase-bottom"><div class="purchase-note"><span id="voucherHint">Type the total to settle the oldest bills first, or fill in the amount against each bill.</span></div><div class="purchase-total voucher-total"><span id="voucherAmountLabel">Amount received</span><div class="input-with-unit voucher-amount"><span>₹</span><input id="voucherAmount" type="text" inputmode="decimal" autocomplete="off" disabled aria-label="Total amount" /></div><button class="outline-button" type="button" id="voucherClear">Clear</button><button class="primary-button" type="submit" id="voucherSave" disabled>Save receipt</button></div></div>
+        </form>
+        <h3 class="subhead" id="voucherDuesHead">Customers with a balance</h3>
+        <div class="purchase-table"><div id="voucherDues"></div></div>
+        <h3 class="subhead" id="voucherListHead">Recent receipts</h3>
+        <div class="purchase-table"><div class="voucher-list-head"><span>Voucher</span><span>Party</span><span>Mode</span><span>Applied to</span><span class="num">Amount</span><span></span></div><div id="voucherRows"></div></div>
+      </section>
+
+      <section class="secondary-view hidden" id="productsView"><div class="view-title"><div><div class="eyebrow">CATALOG</div><h2>Product inventory</h2><p class="view-subtitle" id="productsSubtitle"></p></div><button class="primary-button small-button role-admin" id="addProductButton" type="button">＋ Add product</button></div>
+        <div class="product-tools"><div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="inventorySearch" type="search" placeholder="Search by name, code, barcode or type" autocomplete="off" aria-label="Search products and stock items" /></div><div class="segmented" id="inventoryFilter" role="group" aria-label="Show"><button type="button" class="active" data-inv-filter="all">All</button><button type="button" data-inv-filter="stock">Stock items</button><button type="button" data-inv-filter="catalog">Billing catalog</button><button type="button" data-inv-filter="low">Low &amp; out of stock</button></div><span class="product-count" id="inventoryCount"></span></div>
+        <h3 class="subhead" id="stockHead">Stock items</h3><div class="inventory-grid" id="inventoryGrid"></div>
+        <h3 class="subhead" id="catalogHead">Billing catalog</h3><div class="inventory-grid" id="catalogGrid"></div>
+      </section>
+
+      <section class="secondary-view hidden" id="purchasesView"><div class="view-title"><div><div class="eyebrow">STOCK IN</div><h2>New purchase</h2><p class="view-subtitle">Create a purchase bill and add materials to stock.</p></div><div class="purchase-number" id="purchaseNumber">PUR</div></div><div class="hq-invoices hidden" id="hqInvoices"><div class="history-heading"><h3>Invoices raised on your outlet</h3><span id="hqInvoiceNote"></span></div><div id="hqInvoiceRows"></div></div><form class="purchase-bill" id="purchaseForm"><div class="purchase-meta"><div><label for="purchaseSupplier">Supplier</label><input id="purchaseSupplier" required placeholder="Supplier or vendor name" /></div><div><label for="purchaseInvoice">Supplier invoice no.</label><input id="purchaseInvoice" placeholder="Optional reference" /></div><div><label for="purchaseDate">Purchase date</label><input id="purchaseDate" type="date" required /></div></div><div class="invoice-loaded hidden" id="invoiceLoaded"></div><div class="purchase-lines" id="purchaseLinesBox"><div class="line-heading"><h3>Materials received</h3></div><div id="purchaseGrid"></div><div class="fkey-bar" aria-label="Keyboard shortcuts"><button type="button" class="fkey" data-fkey="F3"><kbd>F3</kbd>Delete row</button><button type="button" class="fkey" data-fkey="F5"><kbd>F5</kbd>Supplier</button><button type="button" class="fkey" data-fkey="F6"><kbd>F6</kbd>Save purchase</button><button type="button" class="fkey" data-fkey="F12"><kbd>F12</kbd>Clear</button><span class="fkey-tip">Type a code, EAN or name, press Enter. Enter moves across the row; on the last cell it starts the next row.</span></div></div><div class="purchase-bottom"><div class="purchase-note"><span>Stock and average cost are updated only after saving. Type either the rate or the amount; the other is worked out from the quantity.</span></div><div class="purchase-pay"><div class="purchase-pay-field"><label for="purchasePaid">Paid now</label><div class="input-with-unit"><span>₹</span><input id="purchasePaid" type="number" min="0" step="0.01" placeholder="Full amount" /></div></div><div class="purchase-pay-field"><label for="purchaseMode">Mode</label><div class="input-with-unit"><select id="purchaseMode"></select></div></div></div><div class="purchase-total"><span>Purchase total</span><strong id="purchaseTotal">₹0</strong><button class="primary-button" type="submit" id="savePurchase">Save purchase</button></div></div></form><div class="purchase-history"><div class="history-heading"><h3>Recent purchases</h3><span id="purchaseCount">0 entries</span></div><div class="purchase-table"><div class="purchase-head"><span>Purchase</span><span>Supplier</span><span>Materials</span><span>Total</span><span>Status</span></div><div id="purchaseRows"></div></div></div></section>
+
+      <section class="secondary-view hidden" id="expensesView">
+        <div class="view-title"><div><div class="eyebrow">MONEY OUT</div><h2>Expenses</h2><p class="view-subtitle">Record rent, salaries and other running costs so the profit report can show net profit.</p></div><div class="purchase-number" id="expenseMonthTotal">₹0 this month</div></div>
+        <form class="purchase-bill expense-form" id="expenseForm" novalidate>
+          <div class="expense-fields">
+            <div class="field-group"><label for="expenseDate">Date</label><div class="customer-input"><input id="expenseDate" type="date" /></div></div>
+            <div class="field-group"><label for="expenseCategory">Category</label><div class="customer-input"><select id="expenseCategory"></select></div></div>
+            <div class="field-group expense-wide"><label for="expenseDescription">Details <span class="optional">(required for Other)</span></label><div class="customer-input"><input id="expenseDescription" placeholder="e.g. September shop rent" autocomplete="off" aria-describedby="expenseDescriptionError" /></div><small class="field-error" id="expenseDescriptionError" role="alert"></small></div>
+            <div class="field-group"><label for="expenseAmount">Amount <span class="req">*</span></label><div class="customer-input"><span class="phone-prefix">₹</span><input id="expenseAmount" type="number" min="0" step="0.01" placeholder="0.00" aria-describedby="expenseAmountError" /></div><small class="field-error" id="expenseAmountError" role="alert"></small></div>
+            <div class="field-group"><label for="expenseMode">Paid by</label><div class="customer-input"><select id="expenseMode"></select></div></div>
+            <button class="primary-button expense-add" type="submit" id="saveExpense">Add expense</button>
+          </div>
+        </form>
+        <div class="purchase-history"><div class="history-heading"><h3>Recent expenses</h3><span id="expenseCount">0 entries</span></div><div class="purchase-table"><div class="expense-head"><span>Date</span><span>Category</span><span>Details</span><span>Paid by</span><span class="num">Amount</span><span></span></div><div id="expenseRows"></div></div></div>
+      </section>
+
+      <section class="secondary-view hidden" id="manufacturingView">
+        <div class="view-title"><div><div class="eyebrow">WORKSHOP</div><h2>Manufacturing</h2><p class="view-subtitle">Signature blends, R&amp;D trials and production runs. Formulas are visible to HQ administrators only.</p></div><div class="view-actions"><button class="outline-button hidden" id="mfgSecondary" type="button"></button><button class="primary-button small-button" id="mfgPrimary" type="button"></button></div></div>
+        <div class="mfg-tabs" role="tablist" aria-label="Manufacturing sections"><button class="mfg-tab active" data-mfg-tab="signature" role="tab">Signature blends</button><button class="mfg-tab" data-mfg-tab="rnd" role="tab">R&amp;D lab</button><button class="mfg-tab" data-mfg-tab="runs" role="tab">Production runs</button></div>
+        <div id="mfgBody"></div>
+      </section>
+
+      <section class="secondary-view hidden" id="customersView"><div class="view-title"><div><div class="eyebrow">RELATIONSHIPS</div><h2>Customer book</h2><p class="view-subtitle">Walk-in customers from billing are retailers. Add wholesalers and franchisees here: they are billed at their own price list. Edit anyone to change their type.</p></div><div class="view-actions"><button class="primary-button small-button role-staff" id="addPartyButton" type="button">＋ Add customer</button><button class="outline-button role-admin" id="loyaltySettingsButton" type="button">Loyalty program</button><button class="outline-button" id="exportCustomers">Export CSV ↓</button></div></div>
+        <div class="party-tools"><div class="segmented" id="partyFilter" role="group" aria-label="Customer type"><button type="button" class="active" data-party-filter="all">All</button><button type="button" data-party-filter="retail">Retail</button><button type="button" data-party-filter="wholesale">Wholesale</button><button type="button" data-party-filter="franchise">Franchise</button></div><div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="customerSearch" type="search" placeholder="Search name, mobile or GSTIN" autocomplete="off" /></div></div>
+        <div class="customer-list" id="customerList"></div></section>
+
+      <section class="secondary-view hidden" id="pricesView">
+        <div class="view-title"><div><div class="eyebrow">HQ PRICING</div><h2>Selling price update</h2><p class="view-subtitle" id="pricesSubtitle"></p></div></div>
+        <form class="price-form" id="priceForm" novalidate>
+          <div class="price-form-head">Selling Price Update</div>
+          <div class="price-form-body">
+            <div class="pf-line"><label for="priceId">Id</label><div class="customer-input pf-id"><input id="priceId" placeholder="Code or name, then Enter" autocomplete="off" aria-label="Product id, code or name" /></div></div>
+            <div class="pf-line"><label for="priceName">Name</label><div class="customer-input pf-read"><input id="priceName" readonly tabindex="-1" /></div></div>
+            <div class="pf-cols">
+              <div class="pf-col">
+                <div class="pf-line"><label for="priceCurRetail">Retail</label><div class="customer-input pf-read "><input id="priceCurRetail" readonly tabindex="-1" /></div></div>
+                <div class="pf-line"><label for="priceCurWholesale">Wholesale</label><div class="customer-input pf-read "><input id="priceCurWholesale" readonly tabindex="-1" /></div></div>
+                <div class="pf-line"><label for="priceCurFranchise">Franchise</label><div class="customer-input pf-read "><input id="priceCurFranchise" readonly tabindex="-1" /></div></div>
+                <div class="pf-line"><label for="priceCost">Net cost</label><div class="customer-input pf-read "><input id="priceCost" readonly tabindex="-1" /></div></div>
+                <div class="pf-line"><label for="priceStock">Stock</label><div class="customer-input pf-read "><input id="priceStock" readonly tabindex="-1" /></div></div>
+              </div>
+              <div class="pf-col">
+                <div class="pf-line"><label for="priceNewRetail">New retail</label><div class="customer-input"><span class="phone-prefix">₹</span><input id="priceNewRetail" type="text" inputmode="decimal" autocomplete="off" disabled aria-label="New retail price" /></div><span class="pf-margin" id="priceMarginRetail"></span></div>
+                <div class="pf-line"><label for="priceNewWholesale">New wholesale</label><div class="customer-input"><span class="phone-prefix">₹</span><input id="priceNewWholesale" type="text" inputmode="decimal" autocomplete="off" disabled aria-label="New wholesale price" /></div><span class="pf-margin" id="priceMarginWholesale"></span></div>
+                <div class="pf-line"><label for="priceNewFranchise">New franchise</label><div class="customer-input"><span class="phone-prefix">₹</span><input id="priceNewFranchise" type="text" inputmode="decimal" autocomplete="off" disabled aria-label="New franchise price" /></div><span class="pf-margin" id="priceMarginFranchise"></span></div>
+                <p class="pf-note" id="priceCostNote"></p>
+                <div class="pf-actions"><button class="primary-button" type="submit" id="savePrice" disabled>Save prices</button><button class="outline-button" type="button" id="clearPrice">Clear</button></div>
+              </div>
+            </div>
+          </div>
+        </form>
+        <h3 class="subhead">Updated in this session</h3>
+        <div class="purchase-table"><div id="priceLog"></div></div>
+        <h3 class="subhead">All products <span class="subhead-note">click a row to load it</span></h3>
+        <div class="purchase-table"><div class="plist-head"><span>Product</span><span class="num">Cost incl. GST</span><span class="num">Retail</span><span class="num">Wholesale</span><span class="num">Franchise</span></div><div id="priceRows"></div></div>
+        <p class="report-footnote" id="priceNote"></p>
+      </section>
+
+      <section class="secondary-view hidden" id="openingView">
+        <div class="view-title"><div><div class="eyebrow">SETUP</div><h2>Opening stock</h2><p class="view-subtitle" id="openingSubtitle"></p></div><div class="opening-asof"><label for="openingDate">As of</label><div class="customer-input"><input id="openingDate" type="date" /></div></div></div>
+        <div class="purchase-bill">
+          <div class="import-bar"><div class="import-text"><strong>Many items at once?</strong><span>Fill in an Excel or CSV sheet and load it in one go. You see a preview before anything is saved.</span></div><div class="import-actions"><button class="outline-button" type="button" id="openingTemplateXlsx">Template .xlsx ↓</button><button class="outline-button" type="button" id="openingTemplateCsv">Template .csv ↓</button><button class="primary-button small-button" type="button" id="openingImport">⇪ Import Excel / CSV</button><button class="outline-button" type="button" id="openingReportLink">Opening stock report</button></div><input type="file" id="openingFile" accept=".xlsx,.csv,.txt" hidden /></div>
+          <div class="purchase-lines"><div id="openingGrid"></div><div class="fkey-bar" aria-label="Keyboard shortcuts"><button type="button" class="fkey" data-fkey="F3"><kbd>F3</kbd>Delete row</button><button type="button" class="fkey" data-fkey="F6"><kbd>F6</kbd>Save</button><button type="button" class="fkey" data-fkey="F12"><kbd>F12</kbd>Clear</button><span class="fkey-tip">Type a code, EAN or name, press Enter. Enter on the cost cell saves that item and opens the next line. Save stores the whole sheet and starts a new one.</span></div></div>
+          <div class="locked-list hidden" id="openingSavedBox"><h3 id="openingSavedHead">Saved opening stock</h3><p>Saved earlier and not on the sheet. Choose Edit to change one.</p><div id="openingSaved"></div></div>
+          <div class="locked-list hidden" id="openingLocked"><h3>Already in use</h3><p>These items have purchases, transfers or sales, so their opening stock is locked. Change their stock with an adjustment.</p><div id="openingRows"></div></div>
+          <div class="purchase-bottom"><div class="purchase-note"><span id="openingNote">Enter what you physically hold today. The cost per unit sets the average cost used for profit.</span></div><div class="purchase-total"><span>Opening value</span><strong id="openingTotal">₹0</strong><button class="primary-button" type="button" id="saveOpening">Save opening stock</button></div></div>
+        </div>
+      </section>
+
+      <section class="secondary-view hidden" id="verificationView">
+        <div class="view-title"><div><div class="eyebrow">STOCK CONTROL</div><h2>Stock verification</h2><p class="view-subtitle" id="verificationSubtitle"></p></div><div class="view-actions"><label class="inline-check" id="blindOption"><input type="checkbox" id="blindCount" /> <span>Blind count <small>hide system stock while counting</small></span></label><button class="primary-button small-button" id="startCount" type="button">＋ Start a count</button></div></div>
+        <div id="countSheet"></div>
+        <h3 class="subhead">Past counts</h3>
+        <div class="purchase-table"><div class="count-hist-head"><span>Count</span><span>Status</span><span>Items counted</span><span>Differences</span><span class="num">Net value</span><span>Counted by</span><span></span></div><div id="countRows"></div></div>
+      </section>
+
+      <section class="secondary-view hidden" id="transfersView">
+        <div class="view-title"><div><div class="eyebrow">STOCK MOVEMENT</div><h2>Stock transfers</h2><p class="view-subtitle" id="transfersSubtitle"></p></div><button class="primary-button small-button role-admin" id="newTransferButton" type="button">＋ New transfer</button></div>
+        <div class="purchase-table"><div class="transfer-head"><span>Transfer</span><span>Route</span><span>Materials</span><span class="num">Value</span><span>Status</span></div><div id="transferRows"></div></div>
+      </section>
+
+      <section class="secondary-view hidden" id="networkView">
+        <div class="view-title"><div><div class="eyebrow">HEAD OFFICE</div><h2>Outlets &amp; users</h2><p class="view-subtitle">Franchise outlets, their royalty terms, and who can sign in.</p></div><div class="view-actions"><button class="outline-button" id="addUserButton" type="button">＋ Add user</button><button class="primary-button small-button" id="addOutletButton" type="button">＋ Add outlet</button></div></div>
+        <h3 class="subhead">Outlets</h3>
+        <div class="purchase-table"><div class="outlet-head"><span>Outlet</span><span>GSTIN</span><span class="num">Royalty</span><span>Status</span><span></span></div><div id="outletRows"></div></div>
+        <h3 class="subhead">Users</h3>
+        <div class="purchase-table"><div class="user-head"><span>User</span><span>Role</span><span>Outlet</span><span>Status</span><span></span></div><div id="userRows"></div></div>
+      </section>
+
+      <section class="secondary-view hidden" id="reportsView">
+        <div class="view-title"><div><div class="eyebrow">INSIGHTS</div><h2>Business reports</h2></div><button class="outline-button" id="exportReport">Export CSV ↓</button></div>
+        <div class="report-toolbar">
+          <div class="report-tabs" role="tablist" aria-label="Report type">
+            <button class="report-tab active" data-report="sales" role="tab">Sales &amp; GST</button>
+            <button class="report-tab" data-report="profit" role="tab">Profit &amp; margin</button>
+            <button class="report-tab" data-report="stock" role="tab">Stock</button>
+            <button class="report-tab" data-report="dues" role="tab">Dues &amp; purchases</button>
+            <button class="report-tab" data-report="salesman" role="tab">Salesman-wise</button>
+            <button class="report-tab" data-report="opening" role="tab">Opening stock</button>
+            <button class="report-tab role-admin" data-report="royalty" role="tab">Royalty</button>
+          </div>
+          <div class="report-range" id="reportRangeBox">
+            <div class="customer-input range-select role-admin"><select id="reportScope" aria-label="Outlet"></select></div>
+            <div class="customer-input range-select"><select id="reportRange" aria-label="Period"><option value="today">Today</option><option value="7d">Last 7 days</option><option value="month" selected>This month</option><option value="lastmonth">Last month</option><option value="all">All time</option><option value="custom">Custom range</option></select></div>
+            <div class="customer-input range-date hidden" id="rangeFromBox"><input id="reportFrom" type="date" aria-label="From date" /></div>
+            <div class="customer-input range-date hidden" id="rangeToBox"><input id="reportTo" type="date" aria-label="To date" /></div>
+          </div>
+        </div>
+        <div id="reportBody"></div>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <div class="modal-backdrop hidden" id="recipeModal" role="dialog" aria-modal="true" aria-labelledby="recipeTitle">
+    <div class="blend-modal recipe-modal">
+      <div class="modal-heading"><div><span class="bill-label">PRODUCTION RECORD</span><h2 id="recipeTitle">Record recipe</h2><p id="recipeHelp">Record every raw material used.</p></div><button class="modal-close" id="closeRecipe" aria-label="Close recipe">×</button></div>
+      <div class="recipe-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="recipeSearch" type="search" placeholder="Search attars or materials" aria-label="Search attars and raw materials" /></div>
+      <label class="recipe-picker-label" for="recipeMaterialSelect">Choose an attar or raw material</label>
+      <select id="recipeMaterialSelect" class="recipe-material-select"><option value="">Select a material to add</option></select>
+      <div class="recipe-filter-status" id="recipeFilterStatus" aria-live="polite"></div>
+      <div class="recipe-options" id="recipeFiller"></div>
+      <div class="recipe-options" id="recipeOptions"></div>
+      <div id="recipeExtrasWrap" class="hidden">
+        <h4 class="recipe-subhead">Bottles &amp; packaging <span>counted in pieces, not part of the ml total</span></h4>
+        <div class="recipe-options" id="recipeExtras"></div>
+      </div>
+      <div class="blend-summary"><span id="recipeSummary">0 materials recorded</span><strong>0.01ml precision</strong></div>
+      <button class="primary-button" id="saveRecipe" disabled>Add to bill</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="customerModal" role="dialog" aria-modal="true" aria-labelledby="customerModalTitle">
+    <form class="blend-modal customer-modal" id="customerForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label">NEW CUSTOMER</span><h2 id="customerModalTitle">Add customer</h2><p>Saved to your customer book and selected for this bill.</p></div><button class="modal-close" type="button" id="closeCustomerModal" aria-label="Close">×</button></div>
+      <div class="field-group"><label for="newCustomerName">Full name <span class="req">*</span></label><div class="customer-input"><input id="newCustomerName" placeholder="e.g. Anaya Mehta" autocomplete="off" aria-describedby="newCustomerNameError" /></div><small class="field-error" id="newCustomerNameError" role="alert"></small></div>
+      <div class="field-group"><label for="newCustomerPhone">Mobile number <span class="req">*</span></label><div class="customer-input"><span class="phone-prefix">+91</span><input id="newCustomerPhone" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off" aria-describedby="newCustomerPhoneError" /></div><small class="field-error" id="newCustomerPhoneError" role="alert"></small></div>
+      <div class="field-group"><label for="newCustomerEmail">Email <span class="optional">(optional)</span></label><div class="customer-input"><input id="newCustomerEmail" type="email" placeholder="name@example.com" autocomplete="off" aria-describedby="newCustomerEmailError" /></div><small class="field-error" id="newCustomerEmailError" role="alert"></small></div>
+      <button class="primary-button" type="submit">Save &amp; select customer</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="loyaltyModal" role="dialog" aria-modal="true" aria-labelledby="loyaltyTitle">
+    <form class="blend-modal customer-modal loyalty-modal" id="loyaltyForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label">HQ SETTING · ALL OUTLETS</span><h2 id="loyaltyTitle">Loyalty program</h2><p>Customers earn points on their bills and use them to pay part of later bills. Points earned at an outlet are used at that outlet.</p></div><button class="modal-close" type="button" id="closeLoyalty" aria-label="Close">×</button></div>
+      <label class="check-row"><input type="checkbox" id="loyEnabled" /> <span><strong>Loyalty program is on</strong><small>When off, no points are earned or used. Existing points are kept.</small></span></label>
+      <h3 class="modal-subhead">Earning</h3>
+      <div class="loy-line">Earn <div class="customer-input loy-small"><input id="loyEarnPoints" inputmode="numeric" aria-label="Points earned" /></div> point(s) for every ₹ <div class="customer-input loy-small"><input id="loyEarnAmount" inputmode="decimal" aria-label="Spend that earns the points" /></div> spent</div>
+      <div class="field-group"><label>Who earns points</label><div class="loy-types"><label class="check-row"><input type="checkbox" name="loyType" value="retail" /> Retail customers</label><label class="check-row"><input type="checkbox" name="loyType" value="wholesale" /> Wholesalers</label><label class="check-row"><input type="checkbox" name="loyType" value="franchise" /> Franchisees</label></div></div>
+      <label class="check-row"><input type="checkbox" id="loyPaidOnly" /> <span><strong>Only when the bill is paid in full</strong><small>Bills left on credit earn no points. Points are worked out on what the customer really pays, after any points used.</small></span></label>
+      <h3 class="modal-subhead">Redeeming: conditions</h3>
+      <div class="loy-line">1 point is worth ₹ <div class="customer-input loy-small"><input id="loyPointValue" inputmode="decimal" aria-label="Value of one point" /></div></div>
+      <div class="loy-grid">
+        <div class="field-group"><label for="loyMinPoints">Minimum points to redeem</label><div class="customer-input"><input id="loyMinPoints" inputmode="numeric" /><span class="unit-suffix">points</span></div></div>
+        <div class="field-group"><label for="loyMinBill">Minimum bill amount</label><div class="customer-input"><span class="phone-prefix">₹</span><input id="loyMinBill" inputmode="decimal" /></div></div>
+        <div class="field-group"><label for="loyMaxPercent">Points can pay at most</label><div class="customer-input"><input id="loyMaxPercent" inputmode="decimal" /><span class="unit-suffix">% of a bill</span></div></div>
+        <div class="field-group"><label for="loyExpiry">Points expire after <span class="optional">(0 = never)</span></label><div class="customer-input"><input id="loyExpiry" inputmode="numeric" /><span class="unit-suffix">days</span></div></div>
+      </div>
+      <p class="modal-note" id="loyaltyExample"></p>
+      <small class="field-error" id="loyaltyError" role="alert"></small>
+      <button class="primary-button" type="submit" id="loyaltySave">Save loyalty program</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="pointsModal" role="dialog" aria-modal="true" aria-labelledby="pointsTitle">
+    <div class="blend-modal customer-modal">
+      <div class="modal-heading"><div><span class="bill-label">LOYALTY POINTS</span><h2 id="pointsTitle">Customer</h2><p id="pointsSub"></p></div><button class="modal-close" type="button" id="closePoints" aria-label="Close">×</button></div>
+      <form class="points-adjust" id="pointsForm" novalidate>
+        <div class="customer-input"><input id="pointsDelta" inputmode="numeric" placeholder="+50 or −20" autocomplete="off" aria-label="Points to add or remove" /></div>
+        <div class="customer-input points-reason"><input id="pointsReason" maxlength="200" placeholder="Reason (goodwill, correction…)" autocomplete="off" aria-label="Reason" /></div>
+        <button class="primary-button small-button" type="submit" id="pointsSave">Apply</button>
+      </form>
+      <small class="field-error" id="pointsError" role="alert"></small>
+      <div class="points-history" id="pointsHistory"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="salesmenModal" role="dialog" aria-modal="true" aria-labelledby="salesmenTitle">
+    <div class="blend-modal customer-modal">
+      <div class="modal-heading"><div><span class="bill-label" id="salesmenLabel">SALESMEN</span><h2 id="salesmenTitle">Salesmen</h2><p>People a sale can be credited to at this outlet. Switching one off keeps their past sales in the reports.</p></div><button class="modal-close" type="button" id="closeSalesmen" aria-label="Close">×</button></div>
+      <form class="salesman-add" id="salesmanForm" novalidate><div class="customer-input"><input id="salesmanName" maxlength="60" placeholder="Salesman name" autocomplete="off" aria-label="New salesman name" /></div><button class="primary-button small-button" type="submit" id="salesmanAdd">Add</button></form>
+      <small class="field-error" id="salesmanNameError" role="alert"></small>
+      <div class="salesman-list" id="salesmenList"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="partyModal" role="dialog" aria-modal="true" aria-labelledby="partyTitle">
+    <form class="blend-modal customer-modal" id="partyForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label" id="partyLabel">NEW CUSTOMER</span><h2 id="partyTitle">Add customer</h2><p id="partyHelp"></p></div><button class="modal-close" type="button" id="closeParty" aria-label="Close">×</button></div>
+      <div class="field-group"><label>Customer type</label><div class="type-choice" role="radiogroup" aria-label="Customer type"><label><input type="radio" name="partyType" value="retail" checked /><span><strong>Retailer</strong><small>Retail price</small></span></label><label><input type="radio" name="partyType" value="wholesale" /><span><strong>Wholesaler</strong><small>Wholesale price</small></span></label><label><input type="radio" name="partyType" value="franchise" /><span><strong>Franchise</strong><small>Franchise price · own GSTIN</small></span></label></div></div>
+      <div class="field-group"><label for="partyName">Name <span class="req">*</span></label><div class="customer-input"><input id="partyName" placeholder="e.g. Star Traders" autocomplete="off" aria-describedby="partyNameError" /></div><small class="field-error" id="partyNameError" role="alert"></small></div>
+      <div class="field-group"><label for="partyPhone">Mobile number <span class="req">*</span></label><div class="customer-input"><span class="phone-prefix">+91</span><input id="partyPhone" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="off" aria-describedby="partyPhoneError" /></div><small class="field-error" id="partyPhoneError" role="alert"></small></div>
+      <div class="field-group"><label for="partyEmail">Email <span class="optional">(optional)</span></label><div class="customer-input"><input id="partyEmail" type="email" placeholder="name@example.com" autocomplete="off" aria-describedby="partyEmailError" /></div><small class="field-error" id="partyEmailError" role="alert"></small></div>
+      <div class="field-group"><label for="partyGstin" id="partyGstinLabel">GSTIN <span class="optional">(15 characters)</span></label><div class="customer-input"><input id="partyGstin" maxlength="15" placeholder="27ABCDE1234F1Z5" autocomplete="off" aria-describedby="partyGstinError" /></div><small class="field-error" id="partyGstinError" role="alert"></small></div>
+      <div class="field-group role-admin"><label for="partyOutlet">Receiving franchise outlet</label><div class="customer-input"><select id="partyOutlet"><option value="">Not linked</option></select></div><small>HQ must select the exact receiving outlet before a franchise bill can be issued.</small></div>
+      <div class="field-group"><label for="partyAddress">Address <span class="optional">(printed on the invoice)</span></label><div class="customer-input"><input id="partyAddress" maxlength="240" autocomplete="off" /></div></div>
+      <button class="primary-button" type="submit" id="partySubmit">Save customer</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="productModal" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
+    <form class="blend-modal customer-modal" id="productForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label" id="productModalLabel">NEW PRODUCT</span><h2 id="productModalTitle">Add product</h2><p id="productModalHelp"></p></div><button class="modal-close" type="button" id="closeProductModal" aria-label="Close">×</button></div>
+      <div class="field-group" id="productNameGroup"><label for="newProductName">Product name <span class="req">*</span></label><div class="customer-input"><input id="newProductName" placeholder="e.g. Amber Royale" autocomplete="off" aria-describedby="newProductNameError" /></div><small class="field-error" id="newProductNameError" role="alert"></small></div>
+      <div class="field-group" id="productTypeGroup"><label for="newProductType">What is it?</label><div class="customer-input"><select id="newProductType"><option value="attar">Attar (stock item)</option><option value="raw">Raw material (stock item)</option><option value="pack">Packaging or bottles (stock item)</option><option value="product">Product for sale</option></select></div></div>
+      <div class="field-group" id="productUnitGroup"><label for="newProductUnit">Counted in</label><div class="customer-input"><select id="newProductUnit"><option value="ml">ml (liquid)</option><option value="pcs">pcs (pieces)</option></select></div></div>
+      <div class="field-group" id="productCodeGroup"><label for="newProductCode">Item code <span class="optional">(blank = next number)</span></label><div class="customer-input"><input id="newProductCode" placeholder="e.g. M014" autocomplete="off" maxlength="20" aria-describedby="newProductCodeError" /></div><small class="field-error" id="newProductCodeError" role="alert"></small></div>
+      <div class="field-group" id="productEanGroup"><label for="newProductEan">EAN / barcode <span class="optional">(optional, scan or type)</span></label><div class="customer-input"><input id="newProductEan" placeholder="e.g. 8901234567890" autocomplete="off" inputmode="numeric" maxlength="20" aria-describedby="newProductEanError" /></div><small class="field-error" id="newProductEanError" role="alert"></small></div>
+      <div class="field-group" id="productAlertGroup"><label for="newProductAlert" id="productAlertLabel">Low-stock alert at</label><div class="customer-input"><input id="newProductAlert" type="number" min="0" step="1" placeholder="50" aria-describedby="newProductAlertError" /><span class="unit-suffix" id="productAlertUnit">ml</span></div><small class="field-error" id="newProductAlertError" role="alert"></small></div>
+      <div id="productSaleFields" class="hidden">
+        <div class="field-group" id="productPriceGroup"><label for="newProductPrice">Retail price <span class="req">*</span> <span class="optional">(wholesale and franchise prices: see Price update)</span></label><div class="customer-input"><span class="phone-prefix">₹</span><input id="newProductPrice" type="number" min="0" step="1" placeholder="0" aria-describedby="newProductPriceError" /></div><small class="field-error" id="newProductPriceError" role="alert"></small></div>
+        <div class="field-group" id="productGstGroup"><label for="newProductGst">GST rate</label><div class="customer-input"><select id="newProductGst"></select></div></div>
+        <div class="field-group" id="productCostGroup"><label for="newProductCost" id="productCostLabel">Cost per piece</label><div class="customer-input"><span class="phone-prefix">₹</span><input id="newProductCost" type="number" min="0" step="0.01" placeholder="0.00" aria-describedby="newProductCostError" /></div><small class="field-error" id="newProductCostError" role="alert"></small></div>
+        <div class="field-group" id="productSizeGroup"><label for="newProductSize">Size in ml <span class="optional">(optional, shown in the catalog)</span></label><div class="customer-input"><input id="newProductSize" type="number" min="0" step="1" placeholder="e.g. 50" aria-describedby="newProductSizeError" /><span class="unit-suffix">ml</span></div><small class="field-error" id="newProductSizeError" role="alert"></small></div>
+        <label class="check-row" id="productNeedsRecipeRow"><input type="checkbox" id="productNeedsRecipe" /> <span><strong>Needs the production screen</strong><small>Tick if each bottle is blended to order and the exact recipe must be recorded when selling. Leave unticked for packed perfumes that are added straight to the bill.</small></span></label>
+        <div id="productRecipeGroup" class="hidden">
+          <div class="field-group"><label for="newProductRecipeMl">Bottle size for billing (ml) <span class="req">*</span> <span class="optional">(the exact total the production screen must add up to)</span></label><div class="customer-input"><input id="newProductRecipeMl" type="number" min="0" step="0.01" placeholder="e.g. 30" aria-describedby="newProductRecipeMlError" /><span class="unit-suffix">ml</span></div><small class="field-error" id="newProductRecipeMlError" role="alert"></small></div>
+          <div class="field-group"><label for="newProductFill">Top up the rest with <span class="optional">(filled in automatically)</span></label><div class="customer-input"><select id="newProductFill"></select></div><small class="field-hint">For a perfume, choose perfumer's alcohol: enter the attars and the alcohol fills the balance of the bottle. Leave as None for pure attars.</small></div>
+          <div class="field-group"><label for="newProductPack">Packaging used per bottle <span class="optional">(deducted automatically)</span></label><div class="pack-row"><div class="customer-input"><select id="newProductPack"></select></div><div class="customer-input pack-qty"><span class="phone-prefix">×</span><input id="newProductPackQty" type="number" min="1" max="99" step="1" value="1" aria-label="Packaging pieces per bottle" /></div></div></div>
+        </div>
+        <label class="check-row" id="productTrackRow"><input type="checkbox" id="productTrackStock" /> <span><strong>Count stock in pieces</strong><small>Keep a stock level for this packed item, with opening stock, purchases and transfers. It is deducted on each sale.</small></span></label>
+      </div>
+      <div class="field-group" id="productArtGroup"><label>Colour</label><div class="swatch-row" role="radiogroup" aria-label="Product colour">
+        <label class="art-swatch"><input type="radio" name="productArt" value="amber" checked /><span class="art-amber"></span></label>
+        <label class="art-swatch"><input type="radio" name="productArt" value="rose" /><span class="art-rose"></span></label>
+        <label class="art-swatch"><input type="radio" name="productArt" value="plum" /><span class="art-plum"></span></label>
+        <label class="art-swatch"><input type="radio" name="productArt" value="green" /><span class="art-green"></span></label>
+        <label class="art-swatch"><input type="radio" name="productArt" value="cream" /><span class="art-cream"></span></label>
+        <label class="art-swatch"><input type="radio" name="productArt" value="slate" /><span class="art-slate"></span></label>
+      </div></div>
+      <button class="primary-button" type="submit" id="productSubmit">Add product</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="paymentModal" role="dialog" aria-modal="true" aria-labelledby="paymentTitle">
+    <form class="blend-modal customer-modal" id="paymentForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label" id="paymentLabel">RECORD PAYMENT</span><h2 id="paymentTitle">Receive payment</h2><p id="paymentHelp"></p></div><button class="modal-close" type="button" id="closePayment" aria-label="Close">×</button></div>
+      <div class="field-group"><label for="paymentAmount">Amount <span class="req">*</span></label><div class="customer-input"><span class="phone-prefix">₹</span><input id="paymentAmount" type="number" min="0" step="0.01" aria-describedby="paymentAmountError" /></div><small class="field-error" id="paymentAmountError" role="alert"></small></div>
+      <div class="field-group"><label for="paymentModeSelect">Payment mode</label><div class="customer-input"><select id="paymentModeSelect"></select></div></div>
+      <button class="primary-button" type="submit">Record payment</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <form class="blend-modal customer-modal" id="settingsForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label" id="settingsLabel">OUTLET</span><h2 id="settingsTitle">Store settings</h2><p>These details appear on every invoice from this outlet.</p></div><button class="modal-close" type="button" id="closeSettings" aria-label="Close">×</button></div>
+      <div class="field-group role-staff"><label for="setStoreName">Outlet name</label><div class="customer-input"><input id="setStoreName" autocomplete="off" aria-describedby="setStoreNameError" /></div><small class="field-error" id="setStoreNameError" role="alert"></small></div>
+      <div class="field-group role-staff"><label for="setGstin">GSTIN <span class="optional">(15 characters)</span></label><div class="customer-input"><input id="setGstin" maxlength="15" placeholder="27ABCDE1234F1Z5" autocomplete="off" aria-describedby="setGstinError" /></div><small class="field-error" id="setGstinError" role="alert"></small></div>
+      <div class="field-group role-staff"><label for="setPhone">Store phone</label><div class="customer-input"><input id="setPhone" type="tel" autocomplete="off" /></div></div>
+      <div class="field-group role-staff"><label for="setAddress">Address</label><div class="customer-input"><input id="setAddress" autocomplete="off" /></div></div>
+      <div class="field-group role-admin"><label for="setTaxMode">Prices on bills (all outlets)</label><div class="customer-input"><select id="setTaxMode"><option value="inclusive">Include GST (MRP)</option><option value="exclusive">Exclude GST (tax added on top)</option></select></div></div>
+      <div class="role-admin">
+        <h3 class="modal-subhead">Data backup</h3>
+        <p class="modal-note">The server saves a dated copy every day (last 14 kept). Download one to keep off the server. It contains every outlet's data, so store it safely.</p>
+        <button class="outline-button" type="button" id="downloadBackup">Download backup ↓</button>
+        <button class="outline-button" type="button" id="openAudit">Audit history</button>
+        <button class="outline-button" type="button" id="openReconciliation">Franchise reconciliation</button>
+      </div>
+      <h3 class="modal-subhead">Printing <span class="optional">(this computer)</span></h3>
+      <div class="field-group"><label for="setPrintFormat">Paper size</label><div class="customer-input"><select id="setPrintFormat"></select></div></div>
+      <p class="modal-note">Bills, credit notes and receipts print on a full sheet, or narrow for a 3 inch (80 mm) or 2 inch (58 mm) receipt roll. In the print window choose your receipt printer and set margins to None. Ingredients are never printed.</p>
+      <h3 class="modal-subhead">Change your password</h3>
+      <div class="field-group"><label for="setCurrentPass">Current password</label><div class="customer-input"><input id="setCurrentPass" type="password" autocomplete="current-password" aria-describedby="setCurrentPassError" /></div><small class="field-error" id="setCurrentPassError" role="alert"></small></div>
+      <div class="field-group"><label for="setNewPass">New password <span class="optional">(8+ characters)</span></label><div class="customer-input"><input id="setNewPass" type="password" autocomplete="new-password" aria-describedby="setNewPassError" /></div><small class="field-error" id="setNewPassError" role="alert"></small></div>
+      <button class="primary-button" type="submit">Save settings</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="adjustModal" role="dialog" aria-modal="true" aria-labelledby="adjustTitle">
+    <form class="blend-modal customer-modal" id="adjustForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label">STOCK ADJUSTMENT</span><h2 id="adjustTitle">Adjust stock</h2><p id="adjustHelp"></p></div><button class="modal-close" type="button" id="closeAdjust" aria-label="Close">×</button></div>
+      <div class="field-group"><label for="adjustDelta">Change in stock <span class="req">*</span> <span class="optional">(use − to remove)</span></label><div class="customer-input"><input id="adjustDelta" type="number" step="0.01" placeholder="e.g. -5 or 20" aria-describedby="adjustDeltaError" /><span class="unit-suffix" id="adjustUnit">ml</span></div><small class="field-error" id="adjustDeltaError" role="alert"></small></div>
+      <div class="field-group"><label for="adjustReason">Reason <span class="req">*</span></label><div class="customer-input"><input id="adjustReason" placeholder="e.g. Spillage, recount, sample" autocomplete="off" aria-describedby="adjustReasonError" /></div><small class="field-error" id="adjustReasonError" role="alert"></small></div>
+      <button class="primary-button" type="submit">Apply adjustment</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="transferModal" role="dialog" aria-modal="true" aria-labelledby="transferTitle">
+    <form class="blend-modal transfer-modal" id="transferForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label">FROM HQ STOCK</span><h2 id="transferTitle">New stock transfer</h2><p>Stock leaves HQ now and reaches the outlet when they confirm receipt.</p></div><button class="modal-close" type="button" id="closeTransfer" aria-label="Close">×</button></div>
+      <div class="field-group"><label for="transferTo">Send to <span class="req">*</span></label><div class="customer-input"><select id="transferTo"></select></div></div>
+      <div class="field-group"><label for="transferNote">Note <span class="optional">(optional)</span></label><div class="customer-input"><input id="transferNote" placeholder="e.g. Festival stock" autocomplete="off" /></div></div>
+      <div class="transfer-lines-head"><span>Material</span><span>Quantity</span><span>Rate / unit</span><span>Value</span><span></span></div>
+      <div id="transferLines"></div>
+      <button class="outline-button" type="button" id="addTransferLine">＋ Add material</button>
+      <small class="field-error" id="transferError" role="alert"></small>
+      <div class="transfer-foot"><span>Transfer value</span><strong id="transferTotal">₹0</strong></div>
+      <button class="primary-button" type="submit" id="transferSubmit">Dispatch stock</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="outletModal" role="dialog" aria-modal="true" aria-labelledby="outletModalTitle">
+    <form class="blend-modal customer-modal" id="outletForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label">FRANCHISE</span><h2 id="outletModalTitle">Add outlet</h2><p>The outlet gets its own stock, bills and customers. Catalog and prices always come from HQ.</p></div><button class="modal-close" type="button" id="closeOutlet" aria-label="Close">×</button></div>
+      <div class="field-group" id="outletCodeGroup"><label for="outletCode">Outlet code <span class="req">*</span> <span class="optional">(prefix on bill numbers)</span></label><div class="customer-input"><input id="outletCode" maxlength="8" placeholder="e.g. DEL" autocomplete="off" aria-describedby="outletCodeError" /></div><small class="field-error" id="outletCodeError" role="alert"></small></div>
+      <div class="field-group"><label for="outletName">Outlet name <span class="req">*</span></label><div class="customer-input"><input id="outletName" placeholder="e.g. Scentz Delhi" autocomplete="off" aria-describedby="outletNameError" /></div><small class="field-error" id="outletNameError" role="alert"></small></div>
+      <div class="field-group"><label for="outletGstin">GSTIN <span class="optional">(optional)</span></label><div class="customer-input"><input id="outletGstin" maxlength="15" autocomplete="off" aria-describedby="outletGstinError" /></div><small class="field-error" id="outletGstinError" role="alert"></small></div>
+      <div class="field-group"><label for="outletRoyalty">Royalty <span class="optional">(% of net sales, ex-GST)</span></label><div class="customer-input"><input id="outletRoyalty" type="number" min="0" max="100" step="0.1" placeholder="0" aria-describedby="outletRoyaltyError" /><span class="unit-suffix">%</span></div><small class="field-error" id="outletRoyaltyError" role="alert"></small></div>
+      <div class="field-group"><label for="outletPhone">Phone</label><div class="customer-input"><input id="outletPhone" type="tel" autocomplete="off" /></div></div>
+      <div class="field-group"><label for="outletAddress">Address</label><div class="customer-input"><input id="outletAddress" autocomplete="off" /></div></div>
+      <label class="check-row hidden" id="outletActiveRow"><input type="checkbox" id="outletActive" checked /> Outlet is active</label>
+      <button class="primary-button" type="submit" id="outletSubmit">Add outlet</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="userModal" role="dialog" aria-modal="true" aria-labelledby="userModalTitle">
+    <form class="blend-modal customer-modal" id="userForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label">ACCESS</span><h2 id="userModalTitle">Add user</h2><p>Billers only make bills, add customers and take payments. Managers run one outlet. Administrators see the whole network.</p></div><button class="modal-close" type="button" id="closeUser" aria-label="Close">×</button></div>
+      <div class="field-group" id="userUsernameGroup"><label for="userUsername">Username <span class="req">*</span></label><div class="customer-input"><input id="userUsername" autocomplete="off" autocapitalize="none" aria-describedby="userUsernameError" /></div><small class="field-error" id="userUsernameError" role="alert"></small></div>
+      <div class="field-group"><label for="userFullName">Full name <span class="req">*</span></label><div class="customer-input"><input id="userFullName" autocomplete="off" aria-describedby="userFullNameError" /></div><small class="field-error" id="userFullNameError" role="alert"></small></div>
+      <div class="field-group"><label for="userRoleSelect">Role</label><div class="customer-input"><select id="userRoleSelect"><option value="biller">Biller (bills and payments only)</option><option value="manager">Outlet manager</option><option value="admin">HQ administrator</option></select></div></div>
+      <div class="field-group" id="userOutletGroup"><label for="userOutlet">Outlet</label><div class="customer-input"><select id="userOutlet"></select></div></div>
+      <div class="field-group"><label for="userPassword" id="userPasswordLabel">Password <span class="req">*</span></label><div class="customer-input"><input id="userPassword" type="password" autocomplete="new-password" aria-describedby="userPasswordError" /></div><small class="field-error" id="userPasswordError" role="alert"></small></div>
+      <label class="check-row hidden" id="userActiveRow"><input type="checkbox" id="userActive" checked /> Account is active</label>
+      <button class="primary-button" type="submit" id="userSubmit">Add user</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="royaltyModal" role="dialog" aria-modal="true" aria-labelledby="royaltyTitle">
+    <form class="blend-modal customer-modal" id="royaltyForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label">ROYALTY</span><h2 id="royaltyTitle">Record royalty received</h2><p id="royaltyHelp"></p></div><button class="modal-close" type="button" id="closeRoyalty" aria-label="Close">×</button></div>
+      <div class="field-group"><label for="royaltyAmount">Amount <span class="req">*</span></label><div class="customer-input"><span class="phone-prefix">₹</span><input id="royaltyAmount" type="number" min="0" step="0.01" aria-describedby="royaltyAmountError" /></div><small class="field-error" id="royaltyAmountError" role="alert"></small></div>
+      <div class="field-group"><label for="royaltyDate">Date received</label><div class="customer-input"><input id="royaltyDate" type="date" /></div></div>
+      <div class="field-group"><label for="royaltyMode">Payment mode</label><div class="customer-input"><select id="royaltyMode"></select></div></div>
+      <div class="field-group"><label for="royaltyNote">Note <span class="optional">(optional)</span></label><div class="customer-input"><input id="royaltyNote" placeholder="e.g. August settlement" autocomplete="off" /></div></div>
+      <button class="primary-button" type="submit">Record payment</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="formulaModal" role="dialog" aria-modal="true" aria-labelledby="formulaTitle">
+    <form class="blend-modal formula-modal" id="formulaForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label" id="formulaLabel">BLEND</span><h2 id="formulaTitle">New blend</h2><p id="formulaHelp"></p></div><button class="modal-close" type="button" id="closeFormula" aria-label="Close">×</button></div>
+      <div class="field-group" id="formulaNameGroup"><label for="formulaName">Name <span class="req">*</span></label><div class="customer-input"><input id="formulaName" placeholder="e.g. Nocturne" autocomplete="off" aria-describedby="formulaNameError" /></div><small class="field-error" id="formulaNameError" role="alert"></small></div>
+      <div class="field-group" id="formulaProductGroup"><label for="formulaProduct">Packed product it makes</label><div class="customer-input"><select id="formulaProduct"></select></div></div>
+      <div class="field-group hidden" id="formulaBriefGroup"><label for="formulaBrief">Brief <span class="optional">(what are you aiming for?)</span></label><div class="customer-input"><input id="formulaBrief" placeholder="e.g. Warm amber for winter, 8 hour wear" autocomplete="off" /></div></div>
+      <div class="formula-pair hidden" id="formulaRndGroup"><div class="field-group"><label for="formulaStatus">Stage</label><div class="customer-input"><select id="formulaStatus"><option value="idea">Idea</option><option value="testing">Testing</option><option value="approved">Approved</option><option value="dropped">Dropped</option></select></div></div><div class="field-group"><label for="formulaTarget">Target price <span class="optional">(optional)</span></label><div class="customer-input"><span class="phone-prefix">₹</span><input id="formulaTarget" type="number" min="0" step="1" placeholder="0" /></div></div></div>
+      <div class="blend-lines-head"><span>Ingredient</span><span>Amount</span><span class="num">Share</span><span class="num">Cost</span><span></span></div>
+      <div id="blendLines"></div>
+      <button class="outline-button" type="button" id="addBlendLine">＋ Add ingredient</button>
+      <small class="field-error" id="formulaError" role="alert"></small>
+      <div class="return-summary" id="blendSummary"></div>
+      <div class="field-group"><label for="formulaPack">Packaging per bottle <span class="optional">(deducted when produced)</span></label><div class="pack-row"><div class="customer-input"><select id="formulaPack"></select></div><div class="customer-input pack-qty"><span class="phone-prefix">×</span><input id="formulaPackQty" type="number" min="1" max="99" step="1" value="1" aria-label="Packaging pieces per bottle" /></div></div></div>
+      <div class="field-group"><label for="formulaNotes">Notes <span class="optional">(feel, longevity, changes made)</span></label><div class="customer-input"><textarea id="formulaNotes" rows="3" placeholder="e.g. Opens citrusy, dries down to warm oud"></textarea></div></div>
+      <button class="primary-button" type="submit" id="formulaSubmit">Save blend</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="runModal" role="dialog" aria-modal="true" aria-labelledby="runTitle">
+    <form class="blend-modal formula-modal" id="runForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label" id="runLabel">PRODUCTION</span><h2 id="runTitle">Production run</h2><p id="runHelp"></p></div><button class="modal-close" type="button" id="closeRun" aria-label="Close">×</button></div>
+      <div class="formula-pair"><div class="field-group"><label for="runFormula">Blend</label><div class="customer-input"><select id="runFormula"></select></div></div><div class="field-group"><label for="runVersion">Version</label><div class="customer-input"><select id="runVersion"></select></div></div></div>
+      <div class="formula-pair"><div class="field-group"><label for="runUnits" id="runUnitsLabel">Bottles to make <span class="req">*</span></label><div class="customer-input"><input id="runUnits" type="number" min="1" step="1" placeholder="e.g. 50" aria-describedby="runUnitsError" /></div><small class="field-error" id="runUnitsError" role="alert"></small></div><div class="field-group"><label for="runDate">Date</label><div class="customer-input"><input id="runDate" type="date" /></div></div></div>
+      <div class="field-group"><label for="runNote">Note <span class="optional">(optional)</span></label><div class="customer-input"><input id="runNote" placeholder="e.g. Festival batch" autocomplete="off" /></div></div>
+      <div id="runPreview"></div>
+      <small class="field-error" id="runError" role="alert"></small>
+      <button class="primary-button" type="submit" id="runSubmit">Start production</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="promoteModal" role="dialog" aria-modal="true" aria-labelledby="promoteTitle">
+    <form class="blend-modal customer-modal" id="promoteForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label">LAUNCH</span><h2 id="promoteTitle">Launch as a product</h2><p id="promoteHelp">Creates a packed perfume you can sell, with its own stock, and a signature blend from the chosen trial.</p></div><button class="modal-close" type="button" id="closePromote" aria-label="Close">×</button></div>
+      <div class="field-group"><label for="promoteVersion">Use trial</label><div class="customer-input"><select id="promoteVersion"></select></div></div>
+      <div class="field-group"><label for="promoteName">Product name <span class="req">*</span></label><div class="customer-input"><input id="promoteName" autocomplete="off" aria-describedby="promoteNameError" /></div><small class="field-error" id="promoteNameError" role="alert"></small></div>
+      <div class="field-group"><label for="promotePrice">Selling price <span class="req">*</span></label><div class="customer-input"><span class="phone-prefix">₹</span><input id="promotePrice" type="number" min="0" step="1" aria-describedby="promotePriceError" /></div><small class="field-error" id="promotePriceError" role="alert"></small></div>
+      <div class="field-group"><label for="promoteGst">GST rate</label><div class="customer-input"><select id="promoteGst"></select></div></div>
+      <button class="primary-button" type="submit" id="promoteSubmit">Launch product</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="blend-modal detail-modal">
+      <div class="modal-heading"><div><span class="bill-label" id="detailLabel">BLEND</span><h2 id="detailTitle">Blend</h2><p id="detailSub"></p></div><button class="modal-close" type="button" id="closeDetail" aria-label="Close">×</button></div>
+      <div id="detailBody"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="importModal" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+    <div class="blend-modal detail-modal import-modal">
+      <div class="modal-heading"><div><span class="bill-label">OPENING STOCK</span><h2 id="importTitle">Import preview</h2><p id="importSub"></p></div><button class="modal-close" type="button" id="closeImport" aria-label="Close">×</button></div>
+      <div id="importBody"></div>
+      <div class="detail-controls"><span class="detail-spacer"></span><button class="outline-button" type="button" id="cancelImport">Cancel</button><button class="primary-button small-button" type="button" id="confirmImport">Import</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="countModal" role="dialog" aria-modal="true" aria-labelledby="countTitle">
+    <div class="blend-modal detail-modal">
+      <div class="modal-heading"><div><span class="bill-label">STOCK VERIFICATION</span><h2 id="countTitle">Count</h2><p id="countSub"></p></div><button class="modal-close" type="button" id="closeCount" aria-label="Close">×</button></div>
+      <div id="countBody"></div>
+      <div class="detail-controls"><span class="detail-spacer"></span><button class="outline-button" type="button" id="exportCount">Export CSV ↓</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="returnModal" role="dialog" aria-modal="true" aria-labelledby="returnTitle">
+    <form class="blend-modal return-modal" id="returnForm" novalidate>
+      <div class="modal-heading"><div><span class="bill-label">CREDIT NOTE</span><h2 id="returnTitle">Return items</h2><p id="returnHelp"></p></div><button class="modal-close" type="button" id="closeReturn" aria-label="Close">×</button></div>
+      <div class="return-lines-head"><span>Item</span><span class="num">Sold</span><span class="num">Returned</span><span class="num">Return now</span><span class="num">Credit</span></div>
+      <div id="returnLines"></div>
+      <small class="field-error" id="returnError" role="alert"></small>
+      <div class="field-group"><label for="returnReason">Reason <span class="req">*</span></label><div class="customer-input"><input id="returnReason" placeholder="e.g. Wrong scent, damaged bottle" autocomplete="off" aria-describedby="returnReasonError" /></div><small class="field-error" id="returnReasonError" role="alert"></small></div>
+      <div class="return-summary" id="returnSummary"></div>
+      <div class="field-group hidden" id="returnModeGroup"><label for="returnMode">Refund paid by</label><div class="customer-input"><select id="returnMode"></select></div></div>
+      <p class="modal-note">Signature perfumes go back on the shelf and their cost is reversed. Custom blends cannot be un-mixed, so their materials are not restocked and the cost stays in your profit report.</p>
+      <button class="primary-button" type="submit" id="returnSubmit">Issue credit note</button>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="invoiceModal" role="dialog" aria-modal="true" aria-label="Invoice">
+    <div class="blend-modal invoice-modal">
+      <div class="invoice-actions"><label class="print-format-box"><span>Paper</span><select id="printFormat" aria-label="Paper size for printing"></select></label><button class="outline-button hidden" id="returnFromInvoice" type="button">Return items</button><button class="outline-button" id="printInvoice" type="button">Print</button><button class="outline-button" id="shareInvoice" type="button">Share on WhatsApp</button><button class="modal-close" id="closeInvoice" type="button" aria-label="Close invoice">×</button></div>
+      <div class="invoice-sheet" id="invoiceContent"></div>
+    </div>
+  </div>
+
+  <script src="shared.js"></script>
+  <script src="store.js"></script>
+  <script src="spreadsheet.js"></script>
+  <script src="linegrid.js"></script>
+  <script src="app.js"></script>
+  <script src="franchise.js"></script>
+  <script src="pricing.js"></script>
+  <script src="vouchers.js"></script>
+  <script src="salesmen.js"></script>
+  <script src="loyalty.js"></script>
+  <script src="closing.js"></script>
+  <script src="reports.js"></script>
+  <script src="manufacturing.js"></script>
+  <script src="verification.js"></script>
+  <script src="views.js"></script>
+  <script src="controls-ui.js"></script>
+  <script src="bulk-import-ui.js"></script>
+  <script src="boot.js"></script>
+</body>
+</html>
