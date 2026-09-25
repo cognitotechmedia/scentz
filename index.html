@@ -81,8 +81,9 @@
 
       <div class="workspace" id="billingView">
         <section class="catalog-panel">
+          <div class="billing-mode-bar"><div><strong>Billing type</strong><span>Wholesale and franchise bills include stock items</span></div><div class="segmented" id="billingMode" role="group" aria-label="Billing type"><button type="button" class="active" data-billing-mode="retail">Retail</button><button type="button" data-billing-mode="wholesale">Wholesale</button><button type="button" data-billing-mode="franchise">Franchise</button></div></div>
           <div class="section-heading"><div><h2>Choose a product</h2><p>Blended products record the exact materials used; packed products go straight to the bill</p></div><span class="catalog-count" id="catalogCount">4 products</span></div>
-          <div class="filter-row"><div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="productSearch" type="search" placeholder="Search products" /></div><div class="category-tabs"><button class="category-tab active" data-category="all">All products</button><button class="category-tab" data-category="signature">Packed perfumes</button></div></div>
+          <div class="filter-row"><div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="productSearch" type="search" placeholder="Search products" /></div><div class="category-tabs"><button class="category-tab active" data-category="all">All</button><button class="category-tab" data-category="catalog">Billing catalogue</button><button class="category-tab wholesale-only hidden" data-category="stock">Stock items</button></div></div>
           <div class="product-grid" id="productGrid"></div>
         </section>
 
@@ -239,7 +240,7 @@
         </form>
         <h3 class="subhead">Updated in this session</h3>
         <div class="purchase-table"><div id="priceLog"></div></div>
-        <h3 class="subhead">All products <span class="subhead-note">click a row to load it</span></h3>
+        <h3 class="subhead">All catalogue and stock items <span class="subhead-note">click a row to load it</span></h3>
         <div class="purchase-table"><div class="plist-head"><span>Product</span><span class="num">Cost incl. GST</span><span class="num">Retail</span><span class="num">Wholesale</span><span class="num">Franchise</span></div><div id="priceRows"></div></div>
         <p class="report-footnote" id="priceNote"></p>
       </section>

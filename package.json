@@ -3,9 +3,12 @@
   "version": "2.1.0",
   "private": true,
   "description": "Billing, stock and franchise management for a fragrance house",
-  "engines": { "node": ">=22.5" },
+  "engines": {
+    "node": ">=22.5"
+  },
   "scripts": {
     "start": "node server/server.js",
-    "test": "node server/smoke-test.js && node server/controls-test.js"
+    "test": "node server/smoke-test.js && node server/controls-test.js",
+    "test:bulk": "node server/bulk-import-test.js"
   }
 }

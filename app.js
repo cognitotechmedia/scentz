@@ -1,5 +1,6 @@
 /* ---------- App state ---------- */
 let activeCategory = 'all';
+let billingMode = 'retail';
 let recipeProduct = null;
 let recipeMaterialQuery = '';
 let billDiscount = { type: 'amount', value: 0 };
@@ -16,14 +17,20 @@ function productVisual(product, small = false) {
 }
 function renderProducts() {
   const query = $('#productSearch').value.toLowerCase();
-  const filtered = products.filter(p => (activeCategory === 'all' || p.category === activeCategory) && `${p.name} ${p.type}`.toLowerCase().includes(query));
-  $('#catalogCount').textContent = `${filtered.length} products`;
+  const catalog = products.map(product => ({ ...product, itemKind: 'catalog' }));
+  const stock = billingMode === 'retail' ? [] : rawMaterials.map(material => ({ ...material, itemKind: 'stock', stockMaterialId: material.id }));
+  const filtered = [...catalog, ...stock].filter(item => (activeCategory === 'all' || item.itemKind === activeCategory) && `${item.name} ${item.type} ${item.code || ''}`.toLowerCase().includes(query));
+  $('#catalogCount').textContent = `${filtered.length} item${filtered.length === 1 ? '' : 's'}`;
+  $('#productSearch').placeholder = billingMode === 'retail' ? 'Search products' : 'Search catalogue or stock items';
+  $$('.wholesale-only').forEach(element => element.classList.toggle('hidden', billingMode === 'retail'));
   productGrid.innerHTML = filtered.map(product => {
     // Packed products can count their stock in pieces; the card then shows what is left after the open bill.
     const tracked = product.stockMaterialId ? findMaterial(product.stockMaterialId) : null;
-    const left = tracked ? Math.floor(availableMl(tracked)) : 0;
-    const soldOut = Boolean(tracked) && left < 1;
-    return `<article class="product-card ${soldOut ? 'sold-out' : ''}"><div>${productVisual(product)}</div><div class="product-info"><div class="product-name">${escapeHtml(product.name)}</div><div class="product-type">${product.type}</div>${tracked ? `<div class="product-stock ${left <= tracked.alertMl ? 'low' : ''}">${soldOut ? 'Out of stock' : `${left} in stock`}</div>` : ''}<div class="product-bottom"><span class="product-price">${currency(priceFor(product, billingType()))}</span><button class="add-product" data-add="${product.id}" aria-label="Add ${escapeHtml(product.name)}" ${soldOut ? 'disabled' : ''}>+</button></div></div></article>`;
+    const left = tracked ? (product.itemKind === 'stock' ? availableMl(tracked) : Math.floor(availableMl(tracked))) : 0;
+    const soldOut = Boolean(tracked) && left < (tracked.unit === 'pcs' ? 1 : 0.01);
+    const price = priceFor(product, billingType());
+    const noPrice = product.itemKind === 'stock' && !(price > 0);
+    return `<article class="product-card ${soldOut || noPrice ? 'sold-out' : ''}"><div>${productVisual(product)}</div><div class="product-info"><div class="product-name">${escapeHtml(product.name)}</div><div class="product-type">${product.itemKind === 'stock' ? `Stock item · sold per ${product.unit}` : escapeHtml(product.type)}</div>${tracked ? `<div class="product-stock ${left <= tracked.alertMl ? 'low' : ''}">${soldOut ? 'Out of stock' : `${fmtQty(left, tracked.unit)} in stock`}</div>` : ''}<div class="product-bottom"><span class="product-price">${noPrice ? 'Set price first' : `${currency(price)}${product.itemKind === 'stock' ? ` / ${product.unit}` : ''}`}</span><button class="add-product" ${product.itemKind === 'stock' ? `data-add-stock="${product.id}"` : `data-add="${product.id}"`} aria-label="Add ${escapeHtml(product.name)}" ${soldOut || noPrice ? 'disabled' : ''}>+</button></div></div></article>`;
   }).join('') || '<div class="empty-cart"><strong>No products found</strong><span>Try another search or category</span></div>';
 }
 // Stock reserved by the open bill: recipe materials, counted packed items and packaging.
@@ -34,9 +41,12 @@ const availableMl = material => round2(material.stock - reservedMl(material.id))
 // Who the open bill is for decides the price list: a saved wholesaler or franchise pays their own prices.
 let billingTypeShown = 'retail';
 const billingCustomer = () => { const phone = $('#customerPhone').value.trim(); return phone.length === 10 ? customers.find(customer => customer.phone === phone) || null : null; };
-const billingType = () => billingCustomer()?.type || 'retail';
+const billingType = () => billingMode;
+function syncBillingModeButtons() { $$('#billingMode [data-billing-mode]').forEach(button => button.classList.toggle('active', button.dataset.billingMode === billingMode)); }
 function refreshBillingParty() {
-  const customer = billingCustomer(), type = customer?.type || 'retail', badge = $('#priceListBadge');
+  const customer = billingCustomer();
+  if (customer && customer.type !== billingMode) { billingMode = customer.type || 'retail'; syncBillingModeButtons(); activeCategory = 'all'; }
+  const type = billingMode, badge = $('#priceListBadge');
   badge.classList.toggle('hidden', type === 'retail');
   badge.className = `price-list-badge party-${type}${type === 'retail' ? ' hidden' : ''}`;
   badge.innerHTML = type === 'retail' ? '' : `<strong>${PRICE_LABELS[type]} price list</strong><span>${customer.gstin ? `GSTIN ${escapeHtml(customer.gstin)} · ` : ''}${type === 'franchise' ? 'franchise invoice series' : 'prices below are wholesale'}</span>`;
@@ -45,16 +55,16 @@ function refreshBillingParty() {
   renderTotals();   // loyalty points and the amount to pay follow the customer
 }
 function syncCartWithCatalog() {
-  db.cart = db.cart.filter(item => products.some(product => product.id === item.productId));
+  db.cart = db.cart.filter(item => item.materialId ? rawMaterials.some(material => material.id === item.materialId) : products.some(product => product.id === item.productId));
   billingTypeShown = billingType();
-  db.cart.forEach(item => { const product = products.find(entry => entry.id === item.productId);
-    Object.assign(item, { price: priceFor(product, billingTypeShown), gstRate: product.gstRate, stockMaterialId: product.stockMaterialId, packMaterialId: product.packMaterialId, packQty: product.packQty }); });
+  db.cart.forEach(item => { const product = item.materialId ? findMaterial(item.materialId) : products.find(entry => entry.id === item.productId);
+    Object.assign(item, { price: priceFor(product, billingTypeShown), gstRate: product.gstRate, stockMaterialId: item.materialId || product.stockMaterialId, packMaterialId: product.packMaterialId, packQty: product.packQty }); });
 }
 function renderCart() {
   if (!db.cart.length) {
     cartList.innerHTML = '<div class="empty-cart"><div class="empty-icon">✦</div><strong>Your bill is empty</strong><span>Select products from the catalog to get started</span></div>';
   } else {
-    cartList.innerHTML = db.cart.map(item => `<div class="cart-item"><div>${productVisual(item, true)}</div><div><div class="cart-name">${escapeHtml(item.name)}</div><div class="cart-meta">${item.type}</div><div class="cart-controls"><button class="qty-button" data-qty="${item.id}" data-change="-1">−</button><span>${item.quantity}</span><button class="qty-button" data-qty="${item.id}" data-change="1" ${item.recipe ? 'disabled title="Record another recipe for another bottle"' : ''}>+</button><button class="remove-item" data-remove="${item.id}" aria-label="Remove ${escapeHtml(item.name)}">×</button></div>${item.recipe ? `<span class="recipe-note">${item.recipe.map(line => `${escapeHtml(line.name)} ${line.ml.toFixed(2)}ml`).join(' · ')}${item.packMaterialId && item.includePack !== false ? ` · ${(item.packQty || 1)} × ${escapeHtml(findMaterial(item.packMaterialId)?.name || 'packaging')}` : ''}${(item.extras || []).map(extra => ` · ${extra.qty} × ${escapeHtml(extra.name)}`).join('')}</span>` : ''}</div><div class="cart-price">${currency(item.price * item.quantity)}</div></div>`).join('');
+    cartList.innerHTML = db.cart.map(item => `<div class="cart-item"><div>${productVisual(item, true)}</div><div><div class="cart-name">${escapeHtml(item.name)}</div><div class="cart-meta">${escapeHtml(item.type)}</div><div class="cart-controls">${item.materialId ? `<input class="stock-sale-qty" data-stock-qty="${item.id}" type="number" min="${item.unit === 'pcs' ? 1 : 0.01}" step="${item.unit === 'pcs' ? 1 : 0.01}" max="${availableMl(findMaterial(item.materialId)) + item.quantity}" value="${item.quantity}" aria-label="${escapeHtml(item.name)} quantity in ${item.unit}" /><span>${item.unit}</span>` : `<button class="qty-button" data-qty="${item.id}" data-change="-1">−</button><span>${item.quantity}</span><button class="qty-button" data-qty="${item.id}" data-change="1" ${item.recipe ? 'disabled title="Record another recipe for another bottle"' : ''}>+</button>`}<button class="remove-item" data-remove="${item.id}" aria-label="Remove ${escapeHtml(item.name)}">×</button></div>${item.recipe ? `<span class="recipe-note">${item.recipe.map(line => `${escapeHtml(line.name)} ${line.ml.toFixed(2)}ml`).join(' · ')}${item.packMaterialId && item.includePack !== false ? ` · ${(item.packQty || 1)} × ${escapeHtml(findMaterial(item.packMaterialId)?.name || 'packaging')}` : ''}${(item.extras || []).map(extra => ` · ${extra.qty} × ${escapeHtml(extra.name)}`).join('')}</span>` : ''}</div><div class="cart-price">${currency(item.price * item.quantity)}</div></div>`).join('');
   }
   renderTotals();
   persistCart();
@@ -157,6 +167,16 @@ function addToCart(id) {
     renderCart(); showToast(`${product.name} added to bill`); return;
   }
   openRecipe(product);
+}
+function addStockToCart(id) {
+  if (billingMode === 'retail') return;
+  const material = findMaterial(id), available = material ? availableMl(material) : 0;
+  if (!material || available < (material.unit === 'pcs' ? 1 : 0.01)) { showToast(`${material?.name || 'This item'} is out of stock`); return; }
+  const existing = db.cart.find(item => item.materialId === id);
+  const addQty = material.unit === 'pcs' ? 1 : Math.min(1, available);
+  if (existing) existing.quantity = round2(existing.quantity + addQty);
+  else db.cart.push({ id: `stock-${id}`, materialId: id, stockMaterialId: id, name: material.name, type: `Stock item · per ${material.unit}`, unit: material.unit, art: material.art, quantity: addQty, price: priceFor(material, billingMode), gstRate: material.gstRate });
+  renderCart(); showToast(`${material.name} added to bill`);
 }
 
 /* ---------- Recipe modal ---------- */
@@ -407,6 +427,8 @@ document.addEventListener('click', event => {
   const hit = selector => event.target.closest(selector);
   const add = hit('[data-add]');
   if (add) addToCart(add.dataset.add);
+  const addStock = hit('[data-add-stock]');
+  if (addStock) addStockToCart(addStock.dataset.addStock);
   const qty = hit('[data-qty]');
   if (qty) {
     const item = db.cart.find(entry => String(entry.id) === qty.dataset.qty);
@@ -437,6 +459,27 @@ document.addEventListener('click', event => {
   if (editMaterial) openProductModal({ kind: 'material', id: editMaterial.dataset.editMaterial });
   const editProduct = hit('[data-edit-product]');
   if (editProduct) openProductModal({ kind: 'product', id: editProduct.dataset.editProduct });
+});
+$('#billingMode').addEventListener('click', event => {
+  const button = event.target.closest('[data-billing-mode]');
+  if (!button || button.dataset.billingMode === billingMode) return;
+  billingMode = button.dataset.billingMode; billingTypeShown = billingMode; activeCategory = 'all';
+  db.cart = []; $('#customerName').value = ''; $('#customerPhone').value = '';
+  syncBillingModeButtons(); $$('.category-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.category === 'all'));
+  refreshBillingParty(); renderCart();
+  if (billingMode !== 'retail') showToast(`Choose a saved ${billingMode} customer, then add catalogue or stock items`);
+});
+cartList.addEventListener('input', event => {
+  const input = event.target.closest('[data-stock-qty]');
+  if (!input) return;
+  const item = db.cart.find(entry => String(entry.id) === input.dataset.stockQty), material = item && findMaterial(item.materialId);
+  if (!item || !material) return;
+  let qty = Number(input.value) || 0;
+  if (material.unit === 'pcs') qty = Math.floor(qty);
+  const minimum = material.unit === 'pcs' ? 1 : 0.01;
+  item.quantity = Math.max(minimum, Math.min(qty, availableMl(material) + item.quantity));
+  renderTotals(); persistCart();
+  input.closest('.cart-item').querySelector('.cart-price').textContent = currency(item.price * item.quantity);
 });
 $('#productSearch').addEventListener('input', renderProducts);
 $('#closeRecipe').addEventListener('click', () => closeModal('#recipeModal'));
@@ -556,9 +599,9 @@ customerMenu.className = 'customer-menu hidden';
 $('#customerNameWrap').appendChild(customerMenu);
 function renderCustomerMenu(showAll = false) {
   const query = showAll ? '' : $('#customerName').value.trim().toLowerCase();
-  const matches = customers.filter(customer => `${customer.name} ${customer.phone} ${customer.email}`.toLowerCase().includes(query));
+  const matches = customers.filter(customer => (customer.type || 'retail') === billingMode && `${customer.name} ${customer.phone} ${customer.email}`.toLowerCase().includes(query));
   customerMenu.innerHTML = (matches.map(customer => `<button type="button" class="customer-option" data-customer="${customer.phone}">${escapeHtml(customer.name)}<small>${formatPhone(customer.phone)}${customer.type && customer.type !== 'retail' ? ` · ${PRICE_LABELS[customer.type]}` : ''}${customer.email ? ` · ${escapeHtml(customer.email)}` : ''}</small></button>`).join('') || '<div class="recipe-empty">No saved customer matches</div>')
-    + '<button type="button" class="customer-option add-customer-option" data-add-customer>＋ Add new customer</button>';
+    + (billingMode === 'retail' ? '<button type="button" class="customer-option add-customer-option" data-add-customer>＋ Add new customer</button>' : '<div class="customer-option customer-mode-note">Add this customer in Customer book first.</div>');
 }
 function setCustomerMenuOpen(open) {
   customerMenu.classList.toggle('hidden', !open);
@@ -624,13 +667,14 @@ $('#createBill').addEventListener('click', () => {
   submitting($('#createBill'), async () => {
     if (pendingBill()) { await recoverPendingBill(); return; }
     const customerCheck = checkCustomerFields('customerName', 'customerPhone');
+    const wrongList = customerCheck.existing && (customerCheck.existing.type || 'retail') !== billingMode;
     const bill = currentBill();
     const redeem = redeemCheck(bill), problem = redeem.message || paymentProblem(payableNow(bill));
     updateDue(bill);
-    if (!customerCheck.ok || problem) { showToast(problem || 'Fix the highlighted fields to create the bill'); const bad = $('.bill-panel .customer-input.invalid input'); if (bad) bad.focus(); return; }
+    if (!customerCheck.ok || wrongList || (billingMode !== 'retail' && !customerCheck.existing) || problem) { showToast(wrongList || (billingMode !== 'retail' && !customerCheck.existing) ? `Choose a saved ${billingMode} customer for this bill` : problem || 'Fix the highlighted fields to create the bill'); const bad = $('.bill-panel .customer-input.invalid input'); if (bad) bad.focus(); return; }
     const sale = await submitSafeBill({
       customerName: customerCheck.name, customerPhone: customerCheck.phone,
-      lines: db.cart.map(item => ({ productId: item.productId, qty: item.quantity, recipe: item.recipe ? item.recipe.map(line => ({ id: line.id, ml: line.ml })) : undefined, includePack: item.recipe ? item.includePack !== false : undefined, extras: item.extras && item.extras.length ? item.extras.map(extra => ({ id: extra.id, qty: extra.qty })) : undefined })),
+      lines: db.cart.map(item => ({ productId: item.productId, materialId: item.materialId, qty: item.quantity, recipe: item.recipe ? item.recipe.map(line => ({ id: line.id, ml: line.ml })) : undefined, includePack: item.recipe ? item.includePack !== false : undefined, extras: item.extras && item.extras.length ? item.extras.map(extra => ({ id: extra.id, qty: extra.qty })) : undefined })),
       salesmanId: $('#billSalesman').value || undefined,
       redeemPoints: redeem.points > 0 ? redeem.points : undefined,
       discount: billDiscount, payments: paymentLines.map(line => ({ mode: line.mode, amount: payAmount(line) })).filter(line => line.amount > 0)

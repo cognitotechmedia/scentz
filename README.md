@@ -44,7 +44,7 @@ Press Enter on the cost cell to save that item at once and open the next line; e
 
 ## Price lists and customer types
 
-Every product has three prices: **retail**, **wholesale** and **franchise**. HQ sets them under **Price update** (cost and margin are shown next to each price). Customers are retail, wholesale or franchise: people added from the billing screen are retailers; wholesalers and franchisees are added in the **Customer book**, where any customer can be edited to change their type. A bill is priced from its customer's list (the server does the pricing, so the screen cannot override it) and keeps the buyer's GSTIN and address. Franchise invoices are numbered in their own `FRN` series. Bills already made never change when prices or customer types are edited.
+Every billing catalogue product has three prices: **retail**, **wholesale** and **franchise**. Stock items can also have wholesale and franchise selling prices. HQ sets all of them under **Price update** (cost and margin are shown next to each price). On **New bill**, choose Retail, Wholesale or Franchise. Wholesale and franchise bills can mix billing catalogue products and stock items; the billed stock quantity is deducted in its own unit. Retail billing continues to show the billing catalogue only. Customers are retail, wholesale or franchise: people added from the retail billing screen are retailers; wholesalers and franchisees are added in the **Customer book**, where any customer can be edited to change their type. A bill is priced from its customer's list (the server does the pricing, so the screen cannot override it) and keeps the buyer's GSTIN and address. Franchise invoices are numbered in their own `FRN` series. Bills already made never change when prices or customer types are edited.
 
 ## Day closing
 
@@ -96,3 +96,9 @@ The **Products** screen has a search box: type any part of a name, item code, ba
 ## Version 2.1 controls
 
 Bill requests are recoverable and cannot be replayed into duplicate sales. Royalty rates are saved per invoice. Linked franchise payments and returns update both outlets in one transaction. Store settings includes audit history, historical closing snapshots, and franchise reconciliation. Password and role changes revoke old sessions. Existing data upgrades automatically with a pre-upgrade recovery backup; older royalty rates are marked as baselines because past rate changes were not recorded. Run `npm test` for the API and controls regression suites.
+
+## Bulk stock-item import
+
+On **Products**, administrators can choose **Import stock items** for Excel or CSV uploads of up to 500 new stock items. Download the template, remove its example row, and enter `name`, `type` (Attar stock, Raw material, or Packaging), and `unit` (ml or pcs). Optional fields are `code`, `ean` (keep barcodes as text), and `alertMl` (minimum stock in the chosen unit; blank defaults to 50 ml or 5 pcs).
+
+The preview validates the entire batch without saving. Duplicate names, codes, barcodes, and invalid values prevent the whole batch from being imported. Stock items appear in inventory and do not create billing products. Enter opening quantities and costs through **Opening stock** after importing. **Import billing products** remains available separately. No database migration is required.

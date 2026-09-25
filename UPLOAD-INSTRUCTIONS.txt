@@ -1,0 +1,13 @@
+SCENTZ COMPLETE UPDATE
+
+Includes:
+- Wholesale and franchise billing modes
+- Billing catalogue and stock items on the same wholesale/franchise invoice
+- Selling prices and GST for stock items in Price update
+- Stock quantity deduction in ml or pieces
+- Stock-item bulk import
+- Searchable production material selector
+- Default bottle can be selected or unselected
+
+UPLOAD
+Extract this ZIP and upload its contents to the root of the cognitotechmedia/scentz repository, preserving the public/ and server/ folders. Commit to main, then redeploy in Hostinger. Existing data upgrades automatically when the new server starts.

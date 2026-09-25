@@ -82,13 +82,13 @@ function loadPurchases(whereSql = '', params = []) {
   return db.prepare(`SELECT * FROM purchases ${whereSql} ORDER BY date DESC, rowid DESC`).all(...params).map(row => mapPurchase(row, payments.get(row.id)));
 }
 const MATERIAL_SQL = `
-  SELECT m.id, m.name, m.type, m.art, m.category, m.unit, m.code, m.ean, s.outlet_id, s.stock, s.cost_per_ml, s.alert_ml,
+  SELECT m.id, m.name, m.type, m.art, m.category, m.unit, m.code, m.ean, m.retail_price, m.wholesale_price, m.franchise_price, m.gst_rate, s.outlet_id, s.stock, s.cost_per_ml, s.alert_ml,
     EXISTS (SELECT 1 FROM stock_ledger l WHERE l.outlet_id = s.outlet_id AND l.material_id = m.id AND l.kind <> 'opening') AS locked,
     (SELECT l.qty FROM stock_ledger l WHERE l.outlet_id = s.outlet_id AND l.material_id = m.id AND l.kind = 'opening' ORDER BY l.id DESC LIMIT 1) AS opening_qty,
     (SELECT l.unit_cost FROM stock_ledger l WHERE l.outlet_id = s.outlet_id AND l.material_id = m.id AND l.kind = 'opening' ORDER BY l.id DESC LIMIT 1) AS opening_cost,
     (SELECT l.effective_date FROM stock_ledger l WHERE l.outlet_id = s.outlet_id AND l.material_id = m.id AND l.kind = 'opening' ORDER BY l.id DESC LIMIT 1) AS opening_date
   FROM materials m JOIN outlet_stock s ON s.material_id = m.id`;
-const mapMaterial = row => ({ id: row.id, name: row.name, type: row.type, art: row.art, category: row.category, unit: row.unit, code: row.code, ean: row.ean, outletId: row.outlet_id, stock: row.stock, costPerMl: row.cost_per_ml, alertMl: row.alert_ml, openingLocked: Boolean(row.locked), openingQty: row.opening_qty, openingCost: row.opening_cost, openingDate: row.opening_date });
+const mapMaterial = row => ({ id: row.id, name: row.name, type: row.type, art: row.art, category: row.category, unit: row.unit, code: row.code, ean: row.ean, price: row.retail_price || 0, wholesalePrice: row.wholesale_price || 0, franchisePrice: row.franchise_price || 0, gstRate: row.gst_rate ?? 18, outletId: row.outlet_id, stock: row.stock, costPerMl: row.cost_per_ml, alertMl: row.alert_ml, openingLocked: Boolean(row.locked), openingQty: row.opening_qty, openingCost: row.opening_cost, openingDate: row.opening_date });
 const loadMaterials = outletId => db.prepare(`${MATERIAL_SQL} WHERE s.outlet_id = ? ORDER BY m.rowid`).all(outletId).map(mapMaterial);
 
 // What a biller must not see: cost prices and everything about buying and stock control.
@@ -180,6 +180,7 @@ function checkMode(mode) { if (!PAYMENT_MODES.includes(mode)) bad('Choose a vali
 const PRICE_TYPES = ['retail', 'wholesale', 'franchise'];
 // The price a customer type pays. Older products without a slab price fall back to retail.
 const slabPrice = (product, type) => type === 'wholesale' ? (product.wholesale_price ?? product.price) : type === 'franchise' ? (product.franchise_price ?? product.price) : product.price;
+const materialPrice = (material, type) => type === 'wholesale' ? material.wholesale_price : type === 'franchise' ? material.franchise_price : material.retail_price;
 // Retail and wholesale bills share the INV series; franchise invoices are raised in their own FRN series.
 const INVOICE_SERIES = { retail: 'inv', wholesale: 'inv', franchise: 'frn' };
 function numbered(outlet, kind) {
@@ -424,6 +425,18 @@ function createSale({ body, user, outlet }) {
     const usage = new Map(), items = [], built = [];
     const use = (id, qty) => usage.set(id, round2((usage.get(id) || 0) + qty));
     for (const line of requested) {
+      if (line.materialId) {
+        if (priceType === 'retail') bad('Stock items can be billed only on wholesale or franchise bills');
+        const material = db.prepare('SELECT * FROM materials WHERE id = ?').get(String(line.materialId));
+        const qty = round2(Number(line.qty));
+        if (!material || !(qty > 0) || (material.unit === 'pcs' && !Number.isInteger(qty)) || qty > 999999) bad('Invalid stock item quantity');
+        const price = round2(materialPrice(material, priceType));
+        if (!(price > 0)) bad(`${material.name} does not have a ${priceType} selling price`);
+        use(material.id, qty);
+        items.push({ price, quantity: qty, gstRate: material.gst_rate });
+        built.push({ product: { name: material.name, type: `Stock item · per ${material.unit}`, needs_recipe: 0 }, qty, name: material.name, cost: 0, recipe: null, pack: null, extras: [], tracked: material.id });
+        continue;
+      }
       const product = db.prepare('SELECT * FROM products WHERE id = ? AND active = 1').get(String(line.productId));
       if (!product) bad('One of the products is no longer available');
       const qty = Number(line.qty);
@@ -1236,6 +1249,15 @@ function updatePrices({ body }) {
   if (!list.length || list.length > 500) bad('Change at least one price');
   return tx(() => {
     for (const entry of list) {
+      if (entry.itemType === 'material') {
+        const material = db.prepare('SELECT id, name FROM materials WHERE id = ?').get(String(entry.id));
+        if (!material) throw new HttpError(404, 'Stock item not found');
+        const retail = round2(num(entry.price)), wholesale = round2(num(entry.wholesalePrice)), franchise = round2(num(entry.franchisePrice)), gstRate = num(entry.gstRate);
+        if (retail < 0 || !(wholesale > 0) || !(franchise > 0)) bad(`${material.name}: wholesale and franchise prices must be greater than 0`);
+        if (!GST_RATES.includes(gstRate)) bad(`${material.name}: choose a valid GST rate`);
+        db.prepare('UPDATE materials SET retail_price = ?, wholesale_price = ?, franchise_price = ?, gst_rate = ? WHERE id = ?').run(retail, wholesale, franchise, gstRate, material.id);
+        continue;
+      }
       const product = db.prepare('SELECT id, name FROM products WHERE id = ?').get(String(entry.id));
       if (!product) throw new HttpError(404, 'Product not found');
       const retail = round2(num(entry.price)), wholesale = round2(num(entry.wholesalePrice)), franchise = round2(num(entry.franchisePrice));
